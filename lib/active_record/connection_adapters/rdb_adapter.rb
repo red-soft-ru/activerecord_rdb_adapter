@@ -14,6 +14,7 @@ require 'active_record/connection_adapters/rdb/schema_statements'
 require 'active_record/connection_adapters/rdb/quoting'
 require 'active_record/connection_adapters/rdb/table_definition'
 require 'active_record/connection_adapters/rdb_column'
+require 'active_record/connection_adapters/rdb/type_metadata'
 require 'active_record/rdb_base'
 
 module ActiveRecord
@@ -87,6 +88,10 @@ module ActiveRecord
         false
       end
 
+      def supports_datetime_with_precision?
+        false
+      end
+
       def active?
         return false unless @connection.open?
 
@@ -138,19 +143,19 @@ module ActiveRecord
         map.alias_type(/blob sub_type text/i, 'text')
       end
 
-      def translate_exception(e, message)
-        case e.message
+      def translate_exception(exception, message:, sql:, binds:)
+        case exception.message
         when /violation of FOREIGN KEY constraint/
-          ActiveRecord::InvalidForeignKey.new(message)
+          ActiveRecord::InvalidForeignKey.new(message, sql: sql, binds: binds)
         when /violation of PRIMARY or UNIQUE KEY constraint/, /attempt to store duplicate value/
-          ActiveRecord::RecordNotUnique.new(message)
+          ActiveRecord::RecordNotUnique.new(message, sql: sql, binds: binds)
         when /This operation is not defined for system tables/
           ActiveRecord::ActiveRecordError.new(message)
         when /Column does not belong to referenced table/,
             /Unsuccessful execution caused by system error that does not preclude successful execution of subsequent statements/,
             /The cursor identified in the UPDATE or DELETE statement is not positioned on a row/,
             /Overflow occurred during data type conversion/
-          ActiveRecord::StatementInvalid.new(message)
+          ActiveRecord::StatementInvalid.new(message, sql: sql, binds: binds)
         else
           super
         end

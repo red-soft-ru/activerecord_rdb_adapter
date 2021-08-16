@@ -67,14 +67,6 @@ module ActiveRecord
           lookup_cast_type(type)
         end
 
-        def type_casted_binds(binds) # :nodoc:
-          if binds.first.is_a?(Array)
-            binds.map { |column, value| type_cast(value, column) }
-          else
-            binds.map { |attr| type_cast(attr.value_for_database, attr) }
-          end
-        end
-
         private
 
         def id_value_for_database(value)
@@ -114,7 +106,7 @@ module ActiveRecord
             quoted_time(value)
           when Date, Time, DateTime then
             quoted_date(value)
-          when *types_which_need_no_typecasting
+          when nil, Numeric, String
             value
           else
             raise TypeError

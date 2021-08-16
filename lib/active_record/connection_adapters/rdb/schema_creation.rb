@@ -1,7 +1,7 @@
 module ActiveRecord
   module ConnectionAdapters
     module Rdb
-      class SchemaCreation < AbstractAdapter::SchemaCreation # :nodoc:
+      class SchemaCreation < ActiveRecord::ConnectionAdapters::SchemaCreation # :nodoc:
 
         private
 
@@ -37,16 +37,19 @@ module ActiveRecord
             statements.concat(o.indexes.map { |column_name, options| index_in_create(o.name, column_name, options) })
           end
 
-          if supports_foreign_keys_in_create?
-            statements.concat(o.foreign_keys.map { |to_table, options| foreign_key_in_create(o.name, to_table, options) })
+          if supports_foreign_keys?
+            statements.concat(o.foreign_keys.map { |fk| accept fk })
+          end
+
+          if supports_check_constraints?
+            statements.concat(o.check_constraints.map { |chk| accept chk })
           end
 
           create_sql << "(#{statements.join(', ')})" if statements.present?
-          add_table_options!(create_sql, table_options(o))
+          add_table_options!(create_sql, o)
           create_sql << " AS #{@conn.to_sql(o.as)}" if o.as
           create_sql
         end
-
       end
     end
   end

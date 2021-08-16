@@ -38,9 +38,7 @@ module ActiveRecord
         def columns(table_name, _name = nil)
           @col_definitions ||= {}
           @col_definitions[table_name] = column_definitions(table_name).map do |field|
-            sql_type_metadata = column_type_for(field)
-            rdb_opt = { domain: field[:domain], sub_type: field[:sql_subtype] }
-            RdbColumn.new(field[:name], field[:default], sql_type_metadata, field[:nullable], table_name, rdb_opt)
+            new_column_from_field(table_name, field)
           end
         end
 
@@ -224,7 +222,7 @@ module ActiveRecord
           execute "DROP INDEX #{quote_column_name(index_name)}"
         end
 
-        def remove_index(table_name, options = {})
+        def remove_index(table_name, column_name = nil, **options)
           index_name = index_name(table_name, options)
           execute "DROP INDEX #{quote_column_name(index_name)}"
         end
@@ -339,14 +337,26 @@ module ActiveRecord
         end
 
         def new_column_from_field(table_name, field)
-          type_metadata = fetch_type_metadata(field['sql_type'])
-          ActiveRecord::ConnectionAdapters::Column.new(field['name'], field['default'], type_metadata, field['nullable'], table_name)
+          type_metadata = column_type_for(field)
+          rdb_opt = { domain: field[:domain], sub_type: field[:sql_subtype] }
+          RdbColumn.new(field[:name], field[:default], type_metadata, field[:nullable], table_name, rdb_opt)
         end
 
         def column_type_for(field)
           sql_type = RdbColumn.sql_type_for(field)
           type = lookup_cast_type(sql_type)
-          { type: type, sql_type: type.type }
+          rdb_options = {
+            domain: field[:domain],
+            sub_type: field[:sql_subtype]
+          }
+          simple_type = SqlTypeMetadata.new(
+            sql_type: sql_type,
+            type: type,
+            limit: type.limit,
+            precision: type.precision,
+            scale: type.scale
+          )
+          Rdb::TypeMetadata.new(simple_type, rdb_options)
         end
 
         def integer_to_sql(limit)
@@ -401,8 +411,8 @@ module ActiveRecord
             boolean: { name: 'boolean' } }
         end
 
-        def create_table_definition(*args)
-          Rdb::TableDefinition.new(*args)
+        def create_table_definition(name, **options)
+          Rdb::TableDefinition.new(self, name, **options)
         end
 
         def squish_sql(sql)

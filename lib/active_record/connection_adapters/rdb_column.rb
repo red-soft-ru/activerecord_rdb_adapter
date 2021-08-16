@@ -20,35 +20,6 @@ module ActiveRecord
         end
       end
 
-      attr_reader :sub_type, :domain
-
-      def initialize(name, default, sql_type_metadata = nil, null = true, table_name = nil, rdb_options = {})
-        @domain, @sub_type = rdb_options.values_at(:domain, :sub_type)
-        name = name.dup
-        name.downcase!
-        super(name, parse_default(default), sql_type_metadata, null, table_name)
-      end
-
-      def sql_type
-        @sql_type_metadata[:sql_type]
-      end
-
-      def type
-        @sql_type_metadata[:type]
-      end
-
-      def precision
-        @sql_type_metadata[:precision]
-      end
-
-      def scale
-        @sql_type_metadata[:scale]
-      end
-
-      def limit
-        @sql_type_metadata[:limit]
-      end
-
       private
 
       def parse_default(default)

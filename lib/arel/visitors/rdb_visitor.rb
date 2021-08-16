@@ -1,4 +1,6 @@
-module Arel
+# frozen_string_literal: true
+
+module Arel # :nodoc: all
   module Visitors
     class Rdb < Arel::Visitors::ToSql # :nodoc
       private
@@ -25,76 +27,55 @@ module Arel
         end
       end
 
-      def visit_Arel_Nodes_SelectStatement(o, collector)
-        collector << 'SELECT '
-        collector = visit o.offset, collector if o.offset && !o.limit
+      def visit_Arel_Nodes_SelectCore(o, collector, select_statement)
+        collector << 'SELECT'
 
-        collector = o.cores.inject(collector) do |c, x|
-          visit_Arel_Nodes_SelectCore(x, c)
-        end
+        collector = collect_optimizer_hints(o, collector)
+        collector = maybe_visit o.set_quantifier, collector
 
-        unless o.orders.empty?
-          collector << ORDER_BY
-          len = o.orders.length - 1
-          o.orders.each_with_index do |x, i|
-            collector = visit(x, collector)
-            collector << COMMA unless len == i
-          end
-        end
-
-        if o.limit && o.offset
-          collector = limit_with_rows o, collector
-        elsif o.limit && !o.offset
-          collector = visit o.limit, collector
-        end
-
-        maybe_visit o.lock, collector
-      end
-
-      def visit_Arel_Nodes_SelectCore(o, collector)
-        if o.set_quantifier
-          collector = visit o.set_quantifier, collector
-          collector << SPACE
-        end
-
-        unless o.projections.empty?
-          len = o.projections.length - 1
-          o.projections.each_with_index do |x, i|
-            collector = visit(x, collector)
-            collector << COMMA unless len == i
-          end
-        end
+        collect_nodes_for o.projections, collector, ' '
 
         if o.source && !o.source.empty?
           collector << ' FROM '
           collector = visit o.source, collector
         end
 
-        unless o.wheres.empty?
-          collector << WHERE
-          len = o.wheres.length - 1
-          o.wheres.each_with_index do |x, i|
-            collector = visit(x, collector)
-            collector << AND unless len == i
-          end
+        collect_nodes_for o.wheres, collector, ' WHERE ', ' AND '
+        collect_nodes_for o.groups, collector, ' GROUP BY '
+        unless o.havings.empty?
+          collector << ' HAVING '
+          inject_join o.havings, collector, ' AND '
         end
-        unless o.groups.empty?
-          collector << GROUP_BY
-          len = o.groups.length - 1
-          o.groups.each_with_index do |x, i|
-            collector = visit(x, collector)
-            collector << COMMA unless len == i
-          end
+        collect_nodes_for o.windows, collector, ' WINDOW '
+
+        collector
+      end
+
+      def visit_Arel_Nodes_SelectStatement(o, collector)
+        if o.with
+          collector = visit o.with, collector
+          collector << ' '
         end
 
-        if Rails::VERSION::MAJOR < 5
-          collector = maybe_visit o.having, collector
-        else
-          unless o.havings.empty?
-            collector << ' HAVING '
-            inject_join o.havings, collector, AND
-          end
+        collector = o.cores.inject(collector) { |c,x|
+          visit_Arel_Nodes_SelectCore(x, c, o)
+        }
+
+        unless o.orders.empty?
+          collector << ' ORDER BY '
+          len = o.orders.length - 1
+          o.orders.each_with_index { |x, i|
+            collector = visit(x, collector)
+            collector << ', ' unless len == i
+          }
         end
+
+        if o.limit && o.offset
+          collector = limit_with_rows(o, collector)
+        elsif o.limit && !o.offset
+          collector = visit o.limit, collector
+        end
+        maybe_visit o.lock, collector
 
         collector
       end
@@ -109,7 +90,7 @@ module Arel
         visit o.expr, collector
       end
 
-      def limit_with_rows o, collector
+      def limit_with_rows(o, collector)
         o.offset.expr.value = ActiveModel::Attribute.with_cast_value('OFFSET'.freeze,
                                                                      o.offset.expr.value.value + 1,
                                                                      ActiveModel::Type.default_value)
@@ -130,6 +111,13 @@ module Arel
         @connection.quote_column_name(name)
       end
 
+      def visit_Arel_Nodes_Union(o, collector)
+        infix_value(o, collector, ' UNION ')
+      end
+
+      def visit_Arel_Nodes_UnionAll(o, collector)
+        infix_value(o, collector, ' UNION ALL ')
+      end
     end
   end
 end
