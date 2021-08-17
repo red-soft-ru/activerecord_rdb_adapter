@@ -17,6 +17,15 @@ module ActiveRecord
             column.type.type
           end
         end
+
+        def schema_limit(column)
+          limit = column.limit unless column.bigint?
+          limit.inspect if limit && limit != @connection.native_database_types[column.type.type][:limit]
+        end
+
+        def explicit_primary_key_default?(column)
+          true
+        end
       end
     end
   end
