@@ -26,7 +26,7 @@ module ActiveRecord
           column.gsub!(/(?<=[^"\w]|^)value(?=[^"\w]|$)/i, QUOTED_VALUE)
           column.delete!('"')
           column.upcase!
-          @connection.dialect == 1 ? column.to_s : %("#{column}")
+          %("#{column}")
         end
 
         def quote_table_name_for_assignment(_table, attr)
