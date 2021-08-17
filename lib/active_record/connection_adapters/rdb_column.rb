@@ -1,6 +1,10 @@
+# frozen_string_literal: true
+
 module ActiveRecord
   module ConnectionAdapters
     class RdbColumn < Column # :nodoc:
+      delegate :sub_type, :domain, to: :sql_type_metadata, allow_nil: true
+
       class << self
         def sql_type_for(field)
           sql_type = field[:sql_type]
