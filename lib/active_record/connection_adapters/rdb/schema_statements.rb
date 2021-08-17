@@ -339,7 +339,7 @@ module ActiveRecord
         def new_column_from_field(table_name, field)
           type_metadata = column_type_for(field)
           rdb_opt = { domain: field[:domain], sub_type: field[:sql_subtype] }
-          RdbColumn.new(field[:name], field[:default], type_metadata, field[:nullable], table_name, rdb_opt)
+          RdbColumn.new(field[:name], field[:default], type_metadata, field[:nullable], rdb_opt)
         end
 
         def column_type_for(field)
@@ -396,7 +396,8 @@ module ActiveRecord
         end
 
         def initialize_native_database_types
-          { primary_key: 'integer not null primary key',
+          {
+            primary_key: 'integer not null primary key',
             string: { name: 'varchar', limit: 255 },
             text: { name: 'blob sub_type text' },
             integer: { name: 'integer' },
@@ -408,7 +409,8 @@ module ActiveRecord
             time: { name: 'time' },
             date: { name: 'date' },
             binary: { name: 'blob' },
-            boolean: { name: 'boolean' } }
+            boolean: { name: 'boolean' }
+          }
         end
 
         def create_table_definition(name, **options)
