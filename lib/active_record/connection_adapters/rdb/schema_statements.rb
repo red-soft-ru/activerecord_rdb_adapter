@@ -330,6 +330,28 @@ module ActiveRecord
           Rdb::SchemaDumper.create(self, options)
         end
 
+        def assume_migrated_upto_version(version)
+          version = version.to_i
+          sm_table = quote_table_name(schema_migration.table_name)
+
+          migrated = migration_context.get_all_versions
+          versions = migration_context.migrations.map(&:version)
+
+          unless migrated.include?(version)
+            # TODO fix insert query
+            execute "INSERT INTO #{sm_table} (version) VALUES (#{quote(version)})"
+          end
+
+          inserting = (versions - migrated).select { |v| v < version }
+          if inserting.any?
+            if (duplicate = inserting.detect { |v| inserting.count(v) > 1 })
+              raise "Duplicate migration #{duplicate}. Please renumber your migrations to resolve the conflict."
+            end
+            # TODO fix insert query
+            execute insert_versions_sql(inserting)
+          end
+        end
+
         private
 
         def column_definitions(table_name)
