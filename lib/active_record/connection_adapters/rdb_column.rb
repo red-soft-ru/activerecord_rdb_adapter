@@ -26,14 +26,6 @@ module ActiveRecord
 
       private
 
-      def parse_default(default)
-        return if default.nil? || /null/i.match?(default)
-        d = default.dup
-        d.gsub!(/^\s*DEFAULT\s+/i, '')
-        d.gsub!(/(^'|'$)/, '')
-        d
-      end
-
       def simplified_type(field_type)
         return :datetime if /timestamp/i.match?(field_type)
         return :text if /blob sub_type text/i.match?(field_type)

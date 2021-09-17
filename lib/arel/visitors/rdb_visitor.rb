@@ -91,18 +91,16 @@ module Arel # :nodoc: all
       end
 
       def limit_with_rows(o, collector)
-        o.offset.expr.value = ActiveModel::Attribute.with_cast_value('OFFSET'.freeze,
+        offset = ActiveModel::Attribute.with_cast_value('OFFSET'.freeze,
                                                                      o.offset.expr.value.value + 1,
                                                                      ActiveModel::Type.default_value)
-        offset = o.offset.expr.value
-        o.limit.expr.value = ActiveModel::Attribute.with_cast_value('LIMIT'.freeze,
+        limit =  ActiveModel::Attribute.with_cast_value('LIMIT'.freeze,
                                                                     o.limit.expr.value.value + (offset.value - 1),
                                                                     ActiveModel::Type.default_value)
-        limit = o.limit.expr.value
         collector << ' ROWS '
-        collector.add_bind(offset) { |i| '?' }
+        collector.add_bind(offset, &bind_block)
         collector << ' TO '
-        collector.add_bind(limit) { |i| '?' }
+        collector.add_bind(limit, &bind_block)
       end
 
       def quote_column_name name
@@ -118,6 +116,13 @@ module Arel # :nodoc: all
       def visit_Arel_Nodes_UnionAll(o, collector)
         infix_value(o, collector, ' UNION ALL ')
       end
+
+      # todo
+      # def visit_Arel_Nodes_SqlLiteral(o, collector)
+      #   collector.preparable = false
+      #   return collector << Arel.sql("''") if o.blank?
+      #   collector << o.to_s
+      # end
     end
   end
 end

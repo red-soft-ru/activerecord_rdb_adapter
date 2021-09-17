@@ -338,8 +338,7 @@ module ActiveRecord
           versions = migration_context.migrations.map(&:version)
 
           unless migrated.include?(version)
-            # TODO fix insert query
-            execute "INSERT INTO #{sm_table} (version) VALUES (#{quote(version)})"
+            execute "INSERT INTO #{sm_table} (#{quote_column_name('version')}) VALUES (#{quote(version)})"
           end
 
           inserting = (versions - migrated).select { |v| v < version }
@@ -347,8 +346,13 @@ module ActiveRecord
             if (duplicate = inserting.detect { |v| inserting.count(v) > 1 })
               raise "Duplicate migration #{duplicate}. Please renumber your migrations to resolve the conflict."
             end
-            # TODO fix insert query
-            execute insert_versions_sql(inserting)
+
+            statements = insert_versions_sql(inserting)
+            with_multi_statements do
+              disable_referential_integrity do
+                execute_batch(statements, "Versions Load")
+              end
+            end
           end
         end
 
@@ -361,7 +365,7 @@ module ActiveRecord
         def new_column_from_field(table_name, field)
           type_metadata = column_type_for(field)
           rdb_opt = { domain: field[:domain], sub_type: field[:sql_subtype] }
-          RdbColumn.new(field[:name], field[:default], type_metadata, field[:nullable], rdb_opt)
+          RdbColumn.new(field[:name], parse_default(field[:default]), type_metadata, field[:nullable], rdb_opt)
         end
 
         def column_type_for(field)
@@ -379,6 +383,15 @@ module ActiveRecord
             scale: type.scale
           )
           Rdb::TypeMetadata.new(simple_type, rdb_options)
+        end
+
+        def parse_default(default)
+          return if default.nil? || /null/i.match?(default)
+
+          d = default.dup
+          d.gsub!(/^\s*DEFAULT\s+/i, '')
+          d.gsub!(/(^'|'$)/, '')
+          d
         end
 
         def integer_to_sql(limit)
@@ -456,8 +469,16 @@ module ActiveRecord
           end
         end
 
-        after(methods_to_commit) do
-          puts 'Commiting transaction'
+        after(methods_to_commit){|_|}
+
+        def insert_versions_sql(versions)
+          sm_table = quote_table_name(schema_migration.table_name)
+
+          if versions.is_a?(Array)
+            versions.map { |v| "INSERT INTO #{sm_table} (#{quote_column_name('version')}) VALUES (#{quote(v)});" }
+          else
+            ["INSERT INTO #{sm_table} (#{quote_column_name('version')}) VALUES (#{quote(versions)});"]
+          end
         end
       end
     end

@@ -2,8 +2,8 @@ module ActiveRecord
   module ConnectionAdapters
     module Rdb
       module Quoting # :nodoc:
-        QUOTED_FALSE = "'false'".freeze
-        QUOTED_TRUE = "'true'".freeze
+        QUOTED_FALSE = 'false'.freeze
+        QUOTED_TRUE = 'true'.freeze
 
         QUOTED_POSITION = '"POSITION"'.freeze
         QUOTED_VALUE = '"VALUE"'.freeze
@@ -24,6 +24,7 @@ module ActiveRecord
           column = column_name.dup.to_s
           column.gsub!(/(?<=[^"\w]|^)position(?=[^"\w]|$)/i, QUOTED_POSITION)
           column.gsub!(/(?<=[^"\w]|^)value(?=[^"\w]|$)/i, QUOTED_VALUE)
+          column.gsub!(/(?<=[^"\w]|^)as count(?=[^"\w]|$)/i, 'AS "COUNT"')
           column.delete!('"')
           column.upcase!
           %("#{column}")
@@ -31,22 +32,6 @@ module ActiveRecord
 
         def quote_table_name_for_assignment(_table, attr)
           quote_column_name(attr)
-        end
-
-        def unquoted_true
-          true
-        end
-
-        def quoted_true # :nodoc:
-          QUOTED_TRUE
-        end
-
-        def unquoted_false
-          false
-        end
-
-        def quoted_false # :nodoc:
-          QUOTED_FALSE
         end
 
         def type_cast_from_column(column, value) # :nodoc:
@@ -84,32 +69,6 @@ module ActiveRecord
             "'#{value.strftime('%d.%m.%Y')}'"
           else
             super
-          end
-        end
-
-        def _type_cast(value)
-          case value
-          when Symbol, ActiveSupport::Multibyte::Chars, Type::Binary::Data
-            value.to_s
-          when Array
-            value.to_yaml
-          when Hash then
-            encode_hash(value)
-          when true then
-            unquoted_true
-          when false then
-            unquoted_false
-            # BigDecimals need to be put in a non-normalized form and quoted.
-          when BigDecimal then
-            value.to_s('F')
-          when Type::Time::Value then
-            quoted_time(value)
-          when Date, Time, DateTime then
-            quoted_date(value)
-          when nil, Numeric, String
-            value
-          else
-            raise TypeError
           end
         end
 
