@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'fb'
 require 'base64'
 require 'arel'
@@ -18,8 +20,38 @@ require 'active_record/connection_adapters/rdb/type_metadata'
 require 'active_record/rdb_base'
 
 module ActiveRecord
+  module ConnectionHandling # :nodoc:
+    # Establishes a connection to the database that's used by all Active Record objects
+    def rdb_connection(config)
+      config = config.symbolize_keys.dup.reverse_merge(downcase_names: true)
+
+      # Require database.
+      unless config[:database]
+        raise ArgumentError, "No database file specified. Missing argument: database"
+      end
+
+      # Initialize Database with Hash of values:
+      #  :database:: Full Firebird connection string, e.g. 'localhost:/var/fbdata/drivertest.fdb' (required)
+      #  :username:: database username (default: 'sysdba')
+      #  :password:: database password (default: 'masterkey')
+      #  :charset:: character set to be used with the connection (default: 'NONE')
+      #  :role:: database role to connect using (default: nil)
+      #  :downcase_names:: Column names are reported in lowercase, unless they were originally mixed case (default: nil).
+      #  :encoding:: connection encoding (default: ASCII-8BIT)
+      #  :page_size:: page size to use when creating a database (default: 4096)
+      db = ::Fb::Database.new(config).connect
+
+      ConnectionAdapters::RdbAdapter.new(db, logger, config)
+    rescue StandardError => e
+      pp config
+      raise ConnectionNotEstablished, "No Firebird connections established.#{e.full_message}"
+    end
+  end
+
   module ConnectionAdapters
     class RdbAdapter < AbstractAdapter # :nodoc:
+      ADAPTER_NAME = 'RedDatabase'
+
       include Rdb::DatabaseLimits
       include Rdb::DatabaseStatements
       include Rdb::Quoting
@@ -27,8 +59,6 @@ module ActiveRecord
 
       @@default_transaction_isolation = :read_committed
       cattr_accessor :default_transaction_isolation
-
-      ADAPTER_NAME = 'rdb'.freeze
 
       def initialize(connection, logger = nil, config = {})
         super(connection, logger, config)
@@ -152,9 +182,9 @@ module ActiveRecord
         when /This operation is not defined for system tables/
           ActiveRecord::ActiveRecordError.new(message)
         when /Column does not belong to referenced table/,
-            /Unsuccessful execution caused by system error that does not preclude successful execution of subsequent statements/,
-            /The cursor identified in the UPDATE or DELETE statement is not positioned on a row/,
-            /Overflow occurred during data type conversion/
+          /Unsuccessful execution caused by system error that does not preclude successful execution of subsequent statements/,
+          /The cursor identified in the UPDATE or DELETE statement is not positioned on a row/,
+          /Overflow occurred during data type conversion/
           ActiveRecord::StatementInvalid.new(message, sql: sql, binds: binds)
         else
           super
