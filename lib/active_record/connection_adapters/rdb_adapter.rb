@@ -42,9 +42,9 @@ module ActiveRecord
       db = ::Fb::Database.new(config).connect
 
       ConnectionAdapters::RdbAdapter.new(db, logger, config)
-    rescue StandardError => e
+    rescue ::Fb::Error => error
       pp config
-      raise ConnectionNotEstablished, "No Firebird connections established.#{e.full_message}"
+      raise ActiveRecord::ConnectionNotEstablished, error.message
     end
   end
 
