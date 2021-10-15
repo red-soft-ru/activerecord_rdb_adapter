@@ -1,23 +1,18 @@
-ActiveRecord::Migration.verbose = false
+# frozen_string_literal: true
 
 ActiveRecord::Schema.define do
-  # The AR Schema doesn't set the sequence option for the
-  # companies or minivans table, but uses a custom sequence name.
-  create_sequence "COMPANIES_NONSTD_SEQ"
-  create_sequence "MINIVANS_SEQ"
-
   create_table :foos, force: true do |t|
     t.integer :v
   end
 
   create_table :bars, force: true do |t|
-    t.string :v1
+    t.string :v1, null: false
     t.string :v2
     t.string :v3
     t.date :created_date
   end
 
-  create_table :fb_types, force: true do |t|
+  create_table :rdb_types, force: true do |t|
     t.string    :type_string, limit: 10
 
     t.integer   :type_smallint, limit: 2
@@ -37,5 +32,3 @@ ActiveRecord::Schema.define do
     t.binary    :type_binary
   end
 end
-
-ActiveRecord::Migration.verbose = true

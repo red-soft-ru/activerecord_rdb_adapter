@@ -13,5 +13,5 @@ Gem::Specification.new do |s|
   s.files = Dir['README.md', 'lib/**/*', 'extconf.rb', 'fb.c', 'fb_extensions.rb']
   s.extensions = ['extconf.rb'] if s.platform == Gem::Platform::RUBY
 
-  s.add_dependency 'rails', '~> 6.0'
+  s.add_dependency 'rails', '~> 6.1'
 end

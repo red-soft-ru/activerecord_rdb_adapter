@@ -116,13 +116,6 @@ module Arel # :nodoc: all
       def visit_Arel_Nodes_UnionAll(o, collector)
         infix_value(o, collector, ' UNION ALL ')
       end
-
-      # todo
-      # def visit_Arel_Nodes_SqlLiteral(o, collector)
-      #   collector.preparable = false
-      #   return collector << Arel.sql("''") if o.blank?
-      #   collector << o.to_s
-      # end
     end
   end
 end

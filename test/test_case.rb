@@ -10,7 +10,7 @@ module ActiveRecord
   # = Active Record Test Case
   #
   # Defines some test assertions to test against SQL queries.
-  class RdbTestCase < ActiveSupport::TestCase #:nodoc:
+  class TestCase < ActiveSupport::TestCase #:nodoc:
     include ActiveSupport::Testing::MethodCallAssertions
     include ActiveSupport::Testing::Stream
     include ActiveRecord::TestFixtures
@@ -20,7 +20,7 @@ module ActiveRecord
     self.use_transactional_tests = true
 
     def create_fixtures(*fixture_set_names, &block)
-      ActiveRecord::FixtureSet.create_fixtures(ActiveRecord::RdbTestCase.fixture_path, fixture_set_names, fixture_class_names, &block)
+      ActiveRecord::FixtureSet.create_fixtures(ActiveRecord::TestCase.fixture_path, fixture_set_names, fixture_class_names, &block)
     end
 
     def teardown
@@ -118,8 +118,6 @@ module ActiveRecord
     end
   end
 
-  class RdbTestCase < TestCase
-
   class SQLCounter
     class << self
       attr_accessor :ignored_sql, :log, :log_all
@@ -138,5 +136,4 @@ module ActiveRecord
   end
 
   ActiveSupport::Notifications.subscribe("sql.active_record", SQLCounter.new)
-  end
 end

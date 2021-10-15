@@ -4,6 +4,7 @@ require 'fb'
 require 'base64'
 require 'arel'
 require 'arel/visitors/rdb_visitor'
+require 'active_record/rdb_patches/sql_literal_patch'
 
 require 'active_record'
 require 'active_record/base'
@@ -17,7 +18,6 @@ require 'active_record/connection_adapters/rdb/quoting'
 require 'active_record/connection_adapters/rdb/table_definition'
 require 'active_record/connection_adapters/rdb_column'
 require 'active_record/connection_adapters/rdb/type_metadata'
-require 'active_record/rdb_base'
 
 module ActiveRecord
   module ConnectionHandling # :nodoc:
@@ -163,6 +163,10 @@ module ActiveRecord
 
       def release_savepoint(name = current_savepoint_name)
         execute("RELEASE SAVEPOINT #{name}")
+      end
+
+      def encoding
+        @connection.encoding
       end
 
       protected

@@ -99,6 +99,10 @@ module ActiveRecord
 
         private
 
+        # Default column value for fixtures.
+        # Used when fixture does not specify column value.
+        # For such columns Rails inserts a DEFAULT value.
+        # Change it to the NULL of default column value
         def default_insert_value(column)
           if column.default.nil?
             Arel.sql('NULL')
@@ -107,6 +111,8 @@ module ActiveRecord
           end
         end
 
+        # RedDatabase does not support bulk inserts.
+        # Split all fixtures in multiple insert queries.
         def build_fixture_statements(fixture_set)
           fixture_set.flat_map do |table_name, fixtures|
             next if fixtures.empty?

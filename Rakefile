@@ -1,54 +1,45 @@
 # frozen_string_literal: true
 
-require "rake/testtask"
+require 'rake'
+require 'rake/testtask'
 
 require_relative "test/config"
 require_relative "test/support/config"
 
-Rake::TestTask.new('rdb' => "rdb:env") do |t|
+Rake::TestTask.new do |t|
   t.libs << "test"
-  t.test_files = FileList["test/cases/adapters/rdb/**/*_test.rb"]
+  t.test_files = FileList["test/**/*_test.rb"]
 
   t.warning = true
   t.verbose = true
 end
 
+task default: [:test]
+
 namespace :db do
+  desc "Build the RedDatabase test databases"
   task :build do
-    config = ARTest.config["connections"]["rdb"]
+    config = ARTest.config["default"]
     %x( echo "CREATE DATABASE \
- 'inet4://#{config["arunit"]["host"]}:#{config["arunit2"]["port"]}/#{config["arunit"]["database"]}' \
- USER '#{config["arunit"]["username"]}' \
- PASSWORD '#{config["arunit"]["password"]}' \
- PAGE_SIZE #{config["arunit"]["page_size"]} \
- DEFAULT CHARACTER SET #{config["arunit"]["charset"]} \
- COLLATION #{config["arunit"]["charset"]};" | \
- docker exec -i RedDatabase isql )
-
-    %x( echo "CREATE DATABASE \
- 'inet4://#{config["arunit2"]["host"]}:#{config["arunit2"]["port"]}/#{config["arunit2"]["database"]}' \
- USER '#{config["arunit2"]["username"]}' \
- PASSWORD '#{config["arunit2"]["password"]}' \
- PAGE_SIZE #{config["arunit2"]["page_size"]} \
- DEFAULT CHARACTER SET #{config["arunit2"]["charset"]} \
- COLLATION #{config["arunit2"]["charset"]};" | \
+ 'inet4://#{config["host"]}:#{config["port"]}/#{config["database"]}' \
+ USER '#{config["username"]}' \
+ PASSWORD '#{config["password"]}' \
+ PAGE_SIZE #{config["page_size"]} \
+ DEFAULT CHARACTER SET #{config["charset"]} \
+ COLLATION #{config["charset"]};" | \
  docker exec -i RedDatabase isql )
   end
 
+  desc "Drop the RedDatabase test databases"
   task :drop do
-    config = ARTest.config["connections"]["rdb"]
+    config = ARTest.config["default"]
     %x( echo 'drop database;' | \
  docker exec -i RedDatabase isql \
- -user '#{config["arunit"]["username"]}' \
- -password '#{config["arunit"]["password"]}' \
- 'inet4://#{config["arunit"]["host"]}:#{config["arunit"]["port"]}/#{config["arunit"]["database"]}' )
-
-    %x( echo 'drop database;' | \
- docker exec -i RedDatabase isql \
- -user '#{config["arunit2"]["username"]}' \
- -password '#{config["arunit2"]["password"]}' \
- 'inet4://#{config["arunit2"]["host"]}:#{config["arunit2"]["port"]}/#{config["arunit2"]["database"]}' )
+ -user '#{config["username"]}' \
+ -password '#{config["password"]}' \
+ 'inet4://#{config["host"]}:#{config["port"]}/#{config["database"]}' )
   end
 
+  desc "Rebuild the RedDatabase test databases"
   task rebuild: [:drop, :build]
 end
