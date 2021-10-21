@@ -119,6 +119,12 @@ module ActiveRecord
             fixtures.map { |fixture| build_fixture_sql([fixture], table_name) }
           end.compact
         end
+
+        # Default DELETE FROM TABLE_NAME clears all data from table.
+        # Override Rails's truncate statement.
+        def build_truncate_statement(table_name)
+          "DELETE FROM #{quote_table_name(table_name)}"
+        end
       end
     end
   end
