@@ -56,4 +56,14 @@ class RdbAdapterTest < ActiveRecord::TestCase
   def test_offset_operator
     assert_equal Bar.select("*").offset(10).to_sql, %{SELECT * FROM "BARS" OFFSET 10 ROWS}
   end
+
+  def test_early_return_from_transaction
+    foo = Bar.create!(v1: '1')
+
+    assert_not_deprecated do
+      foo.with_lock do
+        break
+      end
+    end
+  end
 end

@@ -2,8 +2,18 @@ module ActiveRecord
   module ConnectionAdapters
     module Rdb
       module DatabaseStatements # :nodoc:
+        READ_QUERY = ActiveRecord::ConnectionAdapters::AbstractAdapter.build_read_query_regexp(
+          :begin, :commit, :explain, :select, :release, :savepoint, :rollback, :with
+        ) # :nodoc:
+        private_constant :READ_QUERY
+
+        def write_query?(sql) # :nodoc:
+        !READ_QUERY.match?(sql)
+        end
+
         def execute(sql, name = nil)
           materialize_transactions
+          mark_transaction_written_if_write(sql)
 
           log(sql, name) do
             ActiveSupport::Dependencies.interlock.permit_concurrent_loads do
@@ -14,6 +24,7 @@ module ActiveRecord
 
         def exec_query(sql, name = 'SQL', binds = [], prepare: false)
           materialize_transactions
+          mark_transaction_written_if_write(sql)
 
           type_casted_binds = type_casted_binds(binds)
 
