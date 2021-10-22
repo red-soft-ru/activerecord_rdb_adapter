@@ -3,6 +3,8 @@ module ActiveRecord
     module Rdb
       module DatabaseStatements # :nodoc:
         def execute(sql, name = nil)
+          materialize_transactions
+
           log(sql, name) do
             ActiveSupport::Dependencies.interlock.permit_concurrent_loads do
               @connection.query(sql)
@@ -11,6 +13,8 @@ module ActiveRecord
         end
 
         def exec_query(sql, name = 'SQL', binds = [], prepare: false)
+          materialize_transactions
+
           type_casted_binds = type_casted_binds(binds)
 
           log(sql, name, binds, type_casted_binds) do

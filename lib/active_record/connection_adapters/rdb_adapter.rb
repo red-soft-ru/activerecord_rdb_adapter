@@ -122,6 +122,10 @@ module ActiveRecord
         false
       end
 
+      def supports_lazy_transactions?
+        true
+      end
+
       def active?
         return false unless @connection.open?
 
