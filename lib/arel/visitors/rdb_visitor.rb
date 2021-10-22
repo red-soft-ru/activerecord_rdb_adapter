@@ -74,6 +74,8 @@ module Arel # :nodoc: all
           collector = limit_with_rows(o, collector)
         elsif o.limit && !o.offset
           collector = visit o.limit, collector
+        elsif !o.limit && o.offset
+          collector = visit o.offset, collector
         end
         maybe_visit o.lock, collector
 
@@ -86,8 +88,9 @@ module Arel # :nodoc: all
       end
 
       def visit_Arel_Nodes_Offset(o, collector)
-        collector << ' SKIP '
+        collector << ' OFFSET '
         visit o.expr, collector
+        collector << ' ROWS'
       end
 
       def limit_with_rows(o, collector)

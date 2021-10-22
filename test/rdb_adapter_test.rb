@@ -52,4 +52,8 @@ class RdbAdapterTest < ActiveRecord::TestCase
     assert_equal Bar.select("count").to_sql, %{SELECT "COUNT" FROM "BARS"}
     assert_match(/count/, Bar.select("count(*)").to_sql)
   end
+
+  def test_offset_operator
+    assert_equal Bar.select("*").offset(10).to_sql, %{SELECT * FROM "BARS" OFFSET 10 ROWS}
+  end
 end
