@@ -30,28 +30,19 @@ module ActiveRecord
 
           log(sql, name, binds, type_casted_binds) do
             ActiveSupport::Dependencies.interlock.permit_concurrent_loads do
-              result = @connection.execute(sql, *type_casted_binds)
-              if result.is_a?(Fb::Cursor)
-                fields = result.fields.map(&:name)
-                rows = result.fetchall.map do |row|
-                  row.map do |col|
-                    col.encode('UTF-8', @connection.encoding)
-                  rescue StandardError
-                    col
-                  end
+              @connection.execute(sql, *type_casted_binds) do |result|
+                if result.is_a?(Fb::Cursor)
+                  fields = result.fields.map(&:name)
+                  rows = result.fetchall
+                  build_result(columns: fields, rows: rows)
+                else
+                  # If the sql statement performs an INSERT, UPDATE or DELETE, the number of rows
+                  # affected is returned. Other statements, such as schema updates, return -1.
+                  result
                 end
-                result.close
-                ActiveRecord::Result.new(fields, rows)
-              else
-                result
               end
-            rescue => e
-              result.close if result && result.is_a?(Fb::Cursor)
-              raise e
             end
           end
-        rescue => e
-          raise e
         end
 
         def explain(arel, binds = [])
