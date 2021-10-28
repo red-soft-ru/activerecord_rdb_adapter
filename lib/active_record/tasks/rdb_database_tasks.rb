@@ -9,8 +9,6 @@ module ActiveRecord
 
       def create
         rdb_database.create
-        # create_db
-        establish_connection(db_config)
       rescue ::Fb::Error => e
         raise unless e.message.include?('File exists')
         raise DatabaseAlreadyExists
@@ -19,16 +17,18 @@ module ActiveRecord
       def drop
         establish_connection(db_config)
         rdb_database.drop
-      rescue ::Fb::Error => e
-        raise ::ActiveRecord::ConnectionNotEstablished, e.message
+      rescue StandardError => error
+        raise NoDatabaseError if error.message.include?('No such file or directory')
+        $stderr.puts error
+        $stderr.puts "Couldn't drop database '#{db_config[:database]}'"
+        raise
       end
 
       def purge
-        begin
-          drop
-        rescue StandardError
-          nil
-        end
+        drop
+      rescue StandardError
+        nil
+      ensure
         create
       end
       # ================================================================
@@ -72,7 +72,15 @@ module ActiveRecord
       # Finds the isql command line utility from the PATH
       # Many linux distros call this program isql-fb, instead of isql
       def isql_executable
-        "/opt/RedDatabase/bin/isql"
+        require "mkmf"
+        exe =
+          if find_executable "docker"
+            "docker exec -it RedDatabase isql"
+          else
+            %w[isql-fb isql].detect(&method(:find_executable0))
+          end
+
+        exe || abort("Unable to find isql or isql-fb in your $PATH")
       end
 
       private
