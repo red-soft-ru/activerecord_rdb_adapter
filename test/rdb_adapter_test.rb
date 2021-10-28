@@ -66,4 +66,10 @@ class RdbAdapterTest < ActiveRecord::TestCase
       end
     end
   end
+
+  def test_in_clause_is_correctly_sliced
+    Bar.connection.stub(:in_clause_length, 1) do
+      assert_equal Bar.where(id: [1, 2], v1: "123").to_sql, %{SELECT "BARS".* FROM "BARS" WHERE ("BARS"."ID" IN (1) OR "BARS"."ID" IN (2)) AND "BARS"."V1" = '123'}
+    end
+  end
 end

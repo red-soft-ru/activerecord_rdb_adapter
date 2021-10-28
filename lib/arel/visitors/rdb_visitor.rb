@@ -106,6 +106,99 @@ module Arel # :nodoc: all
         collector.add_bind(limit, &bind_block)
       end
 
+      def visit_Arel_Nodes_In(o, collector)
+        unless Array === o.right
+          return collect_in_clause(o.left, o.right, collector)
+        end
+
+        unless o.right.empty?
+          o.right.delete_if { |value| unboundable?(value) }
+        end
+
+        return collector << "1=0" if o.right.empty?
+
+        in_clause_length = @connection.in_clause_length
+
+        if !in_clause_length || o.right.length <= in_clause_length
+          collect_in_clause(o.left, o.right, collector)
+        else
+          collector << "("
+          o.right.each_slice(in_clause_length).each_with_index do |right, i|
+            collector << " OR " unless i == 0
+            collect_in_clause(o.left, right, collector)
+          end
+          collector << ")"
+        end
+      end
+
+      def collect_in_clause(left, right, collector)
+        collector = visit left, collector
+        collector << " IN ("
+        visit(right, collector) << ")"
+      end
+
+      def visit_Arel_Nodes_NotIn(o, collector)
+        unless Array === o.right
+          return collect_not_in_clause(o.left, o.right, collector)
+        end
+
+        unless o.right.empty?
+          o.right.delete_if { |value| unboundable?(value) }
+        end
+
+        return collector << "1=1" if o.right.empty?
+
+        in_clause_length = @connection.in_clause_length
+
+        if !in_clause_length || o.right.length <= in_clause_length
+          collect_not_in_clause(o.left, o.right, collector)
+        else
+          o.right.each_slice(in_clause_length).each_with_index do |right, i|
+            collector << " AND " unless i == 0
+            collect_not_in_clause(o.left, right, collector)
+          end
+          collector
+        end
+      end
+
+      def collect_not_in_clause(left, right, collector)
+        collector = visit left, collector
+        collector << " NOT IN ("
+        visit(right, collector) << ")"
+      end
+
+      def visit_Arel_Nodes_HomogeneousIn(o, collector)
+        # slice (NOT) IN clause if values more then @connection.in_clause_length
+        if Array === o.right && o.casted_values.size > @connection.in_clause_length
+          if o.type == :in
+            return visit_Arel_Nodes_In(o, collector)
+          else
+            return visit_Arel_Nodes_NotIn(o, collector)
+          end
+        end
+
+        collector.preparable = false
+
+        collector << quote_table_name(o.table_name) << "." << quote_column_name(o.column_name)
+
+        if o.type == :in
+          collector << " IN ("
+        else
+          collector << " NOT IN ("
+        end
+
+        values = o.casted_values
+
+        if values.empty?
+          collector << @connection.quote(nil)
+        else
+          collector.add_binds(values, o.proc_for_binds, &bind_block)
+        end
+
+        collector << ")"
+        collector
+      end
+
       def quote_column_name name
         return name if Arel::Nodes::SqlLiteral === name
 
