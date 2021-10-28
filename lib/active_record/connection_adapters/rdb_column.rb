@@ -18,19 +18,25 @@ module ActiveRecord
                       else
                         ''
                       end
+          if /blob/i.match?(sql_type)
+            sql_type << if sub_type == 1
+                          ' sub_type text'
+                        elsif sub_type == 0
+                          ' sub_type binary'
+                        end
+          end
 
-          sql_type << ' sub_type text' if /blob/i.match?(sql_type) && sub_type == 1
           sql_type
         end
       end
 
       private
 
-      def simplified_type(field_type)
-        return :datetime if /timestamp/i.match?(field_type)
-        return :text if /blob sub_type text/i.match?(field_type)
-        super
-      end
+        def simplified_type(field_type)
+          return :datetime if /timestamp/i.match?(field_type)
+          return :text if /blob sub_type text/i.match?(field_type)
+          super
+        end
     end
   end
 end
