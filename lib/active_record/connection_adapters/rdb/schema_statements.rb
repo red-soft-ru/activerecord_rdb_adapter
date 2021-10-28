@@ -3,18 +3,18 @@ module ActiveRecord
     module Rdb
       module SchemaStatements # :nodoc:
         methods_to_commit = %i[add_column
-                               create_table
-                               rename_column
-                               remove_column
                                change_column
                                change_column_default
                                change_column_null
+                               create_sequence
+                               create_table
+                               drop_sequence
+                               drop_table
+                               drop_trigger
+                               remove_column
                                remove_index
                                remove_index!
-                               drop_table
-                               create_sequence
-                               drop_sequence
-                               drop_trigger]
+                               rename_column]
 
         def tables(_name = nil)
           @connection.table_names
