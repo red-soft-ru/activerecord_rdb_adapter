@@ -228,10 +228,10 @@ module ActiveRecord
         end
 
         def index_name(table_name, options) #:nodoc:
-          if options.respond_to?(:keys) # legacy support
+          if Hash === options
             if options[:column]
-              index_name = "#{table_name}_#{Array.wrap(options[:column]) * '_'}"
-              if index_name.length > 31
+              index_name = "index_#{table_name}_on_#{Array(options[:column]) * '_and_'}"
+              if index_name.length > table_alias_length
                 "IDX_#{Digest::SHA256.hexdigest(index_name)[0..22]}"
               else
                 index_name
@@ -242,7 +242,7 @@ module ActiveRecord
               raise ArgumentError 'You must specify the index name'
             end
           else
-            index_name(table_name, column: options)
+            index_name(table_name, index_name_options(options))
           end
         end
 
