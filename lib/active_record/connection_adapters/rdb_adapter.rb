@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+gem "fb", git: "http://git.red-soft.biz/red2mine/fb.git", ref: "07b90172407a3e1615d259e0010879824c4211c5"
 require 'fb'
 require 'base64'
 require 'arel'
