@@ -443,7 +443,7 @@ module ActiveRecord
             timestamp: { name: 'timestamp' },
             time: { name: 'time' },
             date: { name: 'date' },
-            binary: { name: 'blob' },
+            binary: { name: 'blob sub_type binary' },
             boolean: { name: 'boolean' }
           }
         end

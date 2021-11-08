@@ -183,18 +183,8 @@ module ActiveRecord
         super
         m.register_type(%r(timestamp)i, Type::DateTime.new)
         m.alias_type(%r(blob sub_type text)i, "text")
-        register_class_with_limit m, %r(int)i, RdbAdapterInteger
+        m.alias_type(%r(blob sub_type binary)i, "binary")
       end
-
-      class RdbAdapterInteger < Type::Integer # :nodoc:
-        private
-          def _limit
-            # INTEGER storage class can be stored 8 bytes value.
-            limit || 8
-          end
-      end
-
-      ActiveRecord::Type.register(:integer, RdbAdapterInteger, adapter: :rdb)
 
       def translate_exception(exception, message:, sql:, binds:)
         case exception.message

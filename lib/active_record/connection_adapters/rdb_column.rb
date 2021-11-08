@@ -35,6 +35,7 @@ module ActiveRecord
         def simplified_type(field_type)
           return :datetime if /timestamp/i.match?(field_type)
           return :text if /blob sub_type text/i.match?(field_type)
+          return :binary if /blob sub_type binary/i.match?(field_type)
           super
         end
     end
