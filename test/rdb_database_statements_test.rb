@@ -14,7 +14,7 @@ class RdbDatabaseStatements < ActiveRecord::TestCase
   end
 
   def test_config_should_have_database_key
-    assert_raises ActiveRecord::ConnectionNotEstablished do
+    assert_raises ArgumentError do
       ActiveRecord::Base.rdb_connection(adapter: "rdb", user: "sysdba", password: "masterkey")
     end
   end

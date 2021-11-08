@@ -9,13 +9,13 @@ class RdbAdapterTest < ActiveRecord::TestCase
   end
 
   def test_bad_connection
-    assert_raises ActiveRecord::ConnectionNotEstablished, ("No database connection established") do
+    assert_raises ActiveRecord::NoDatabaseError, ("No database connection established") do
       ActiveRecord::Base.rdb_connection(adapter: "rdb", database: "/tmp/should/_not/_exist/-cinco-dog.db")
     end
   end
 
   def test_config_should_have_database_key
-    assert_raises ActiveRecord::ConnectionNotEstablished do
+    assert_raises ArgumentError do
       ActiveRecord::Base.rdb_connection(adapter: "rdb", user: "sysdba", password: "masterkey")
     end
   end
