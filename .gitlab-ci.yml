@@ -1,5 +1,5 @@
 test:
-  image: ruby:2.7
+  image: docker:dind
   services:
     - name: registry.red-soft.biz:5000/docker-images/red-database/enterprise:3
       alias: RedDatabase
