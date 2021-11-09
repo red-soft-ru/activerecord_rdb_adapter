@@ -1,9 +1,11 @@
 test:
   image: alpine
   services:
+    - name: docker:dind
+      entrypoint: [ "dockerd-entrypoint.sh" ]
+      command: [ "--insecure-registry", "registry.red-soft.biz:5000", "--registry-mirror", "http://registry-mirror.red-soft.biz:6000" ]
     - name: registry.red-soft.biz:5000/docker-images/red-database/enterprise:3
       alias: RedDatabase
-    - name: docker:dind
   before_script:
     - sleep 10h
     - bundle exec rake db:build
