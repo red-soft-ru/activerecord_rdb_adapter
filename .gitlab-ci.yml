@@ -1,5 +1,5 @@
 test:
-  image: docker
+  image: docker:latest
   services:
     - name: docker:dind
       entrypoint: [ "dockerd-entrypoint.sh" ]
