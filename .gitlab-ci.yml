@@ -1,12 +1,19 @@
 test:
-  image: docker:latest
+  variables:
+    DOCKER_DRIVER: overlay2
+  image: ruby:2.7
   services:
-    - name: docker:dind
-      entrypoint: [ "dockerd-entrypoint.sh" ]
-      command: [ "--insecure-registry", "registry.red-soft.biz:5000", "--registry-mirror", "http://registry-mirror.red-soft.biz:6000" ]
     - name: registry.red-soft.biz:5000/docker-images/red-database/enterprise:3
       alias: RedDatabase
   before_script:
+    - apt-get update
+    - apt-get install libtommath1 -y
+    - curl http://builds.red-soft.biz/release_hub/rdb30/3.0.8.0/download/red-database:linux-x86_64-enterprise:3.0.8.0:bin -o /tmp/installer
+    - chmod +x /tmp/installer &&\
+    - /tmp/installer --architecture Super --mode unattended
+    - cd /opt/RedDatabase
+    - rm /tmp/installer
+    - rm -r /opt/RedDatabase/{uninstall,uninstall.dat,doc}
     - sleep 10h
     - bundle exec rake db:build
   script: bundle exec rake test
