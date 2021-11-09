@@ -1,7 +1,7 @@
 test:
   variables:
     DOCKER_DRIVER: overlay2
-  image: ruby:2.7
+  image: ruby:2.7-alpine
   services:
     - name: registry.red-soft.biz:5000/docker-images/red-database/enterprise:3
       alias: RedDatabase
