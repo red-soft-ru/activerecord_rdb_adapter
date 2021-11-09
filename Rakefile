@@ -27,14 +27,14 @@ namespace :db do
  PAGE_SIZE #{config["page_size"]} \
  DEFAULT CHARACTER SET #{config["charset"]} \
  COLLATION #{config["charset"]};" | \
- docker exec -i RedDatabase isql )
+ /opt/RedDatabase/bin/isql )
   end
 
   desc "Drop the RedDatabase test databases"
   task :drop do
     config = ARTest.config["default"]
     %x( echo 'drop database;' | \
- docker exec -i RedDatabase isql \
+ /opt/RedDatabase/bin/isql \
  -user '#{config["username"]}' \
  -password '#{config["password"]}' \
  'inet4://#{config["host"]}:#{config["port"]}/#{config["database"]}' )

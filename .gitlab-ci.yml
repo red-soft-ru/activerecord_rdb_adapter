@@ -6,6 +6,7 @@ test:
     - name: registry.red-soft.biz:5000/docker-images/red-database/enterprise:3
       alias: RedDatabase
   before_script:
+    - sleep 10h
     - apt-get update
     - apt-get install libncurses5 -y
     - curl http://builds.red-soft.biz/release_hub/rdb30/3.0.8.0/download/red-database:linux-x86_64-enterprise:3.0.8.0:bin -o /tmp/installer
@@ -14,6 +15,5 @@ test:
     - cd /opt/RedDatabase
     - rm /tmp/installer
     - rm -r /opt/RedDatabase/{uninstall,uninstall.dat,doc}
-    - sleep 10h
     - bundle exec rake db:build
   script: bundle exec rake test
