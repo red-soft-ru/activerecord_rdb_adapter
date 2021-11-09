@@ -16,7 +16,7 @@ test:
     - chmod +x /tmp/installer &&\
     - /tmp/installer --architecture Super --mode unattended
     - cp -R /opt/RedDatabase/include/* /usr/include
-    - cp -R /opt/RedDatabase/lib/* /usr/lib/x86-64-linux-gnu
+    - cp -R /opt/RedDatabase/lib/* /usr/lib/x86_64-linux-gnu
     - bundle install
     - bundle exec rake db:build
   script: bundle exec rake test
