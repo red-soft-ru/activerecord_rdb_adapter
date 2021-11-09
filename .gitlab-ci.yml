@@ -1,5 +1,5 @@
 test:
-  image: docker:dind
+  image: alpine
   services:
     - name: registry.red-soft.biz:5000/docker-images/red-database/enterprise:3
       alias: RedDatabase
