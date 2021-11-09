@@ -1,5 +1,5 @@
 test:
-  image: alpine
+  image: docker
   services:
     - name: docker:dind
       entrypoint: [ "dockerd-entrypoint.sh" ]
