@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module ActiveRecord
   module ConnectionAdapters
     module Rdb
@@ -25,9 +27,9 @@ module ActiveRecord
         end
 
         def indexes(table_name, _name = nil)
-          @connection.indexes.values.map do |ix|
+          @connection.indexes.values.filter_map do |ix|
             IndexDefinition.new(table_name, ix.index_name, ix.unique, ix.columns) if ix.table_name == table_name.to_s && ix.index_name !~ /^rdb\$/
-          end.compact
+          end
         end
 
         def index_name_exists?(table_name, index_name)
@@ -43,9 +45,9 @@ module ActiveRecord
         end
 
         def create_table(name, options = {}) # :nodoc:
-          raise ActiveRecordError, 'Firebird does not support temporary tables' if options.key? :temporary
+          raise ActiveRecordError, "Firebird does not support temporary tables" if options.key? :temporary
 
-          raise ActiveRecordError, 'Firebird does not support creating tables with a select' if options.key? :as
+          raise ActiveRecordError, "Firebird does not support creating tables with a select" if options.key? :as
 
           drop_table name, if_exists: true if options.key? :force
 
@@ -80,13 +82,13 @@ module ActiveRecord
         def drop_table(name, options = {}) # :nodoc:
           drop_sql = "DROP TABLE #{quote_table_name(name)}"
           drop = if options[:if_exists]
-                   !execute(squish_sql(<<-END_SQL))
+            !execute(squish_sql(<<-END_SQL))
           select 1 from rdb$relations where rdb$relation_name = #{quote_table_name(name).tr('"', '\'')}
-                   END_SQL
-                        .empty?
-                 else
-                   false
-                 end
+            END_SQL
+                 .empty?
+          else
+            false
+          end
 
           trigger_name = "N$#{name.upcase}"
           drop_trigger(trigger_name) if trigger_exists?(trigger_name)
@@ -164,7 +166,7 @@ module ActiveRecord
           type_sql = type_to_sql(type, *options.values_at(:limit, :precision, :scale))
 
           if %i[text string].include?(type)
-            copy_column = 'c_temp'
+            copy_column = "c_temp"
             add_column table_name, copy_column, type, options
             execute(squish_sql(<<-END_SQL))
             UPDATE #{table_name} SET #{quote_column_name(copy_column)} = #{quote_column_name(column_name)};
@@ -199,7 +201,7 @@ module ActiveRecord
           ar_type = db_column.type
           type = type_to_sql(ar_type.type, ar_type.limit, ar_type.precision, ar_type.scale)
 
-          copy_column = 'c_temp'
+          copy_column = "c_temp"
           add_column table_name, copy_column, type, options
           execute(squish_sql(<<-END_SQL))
             UPDATE #{table_name} SET #{quote_column_name(copy_column)} = #{quote_column_name(column_name)};
@@ -227,7 +229,7 @@ module ActiveRecord
           execute "DROP INDEX #{quote_column_name(index_name)}"
         end
 
-        def index_name(table_name, options) #:nodoc:
+        def index_name(table_name, options) # :nodoc:
           if Hash === options
             if options[:column]
               index_name = "index_#{table_name}_on_#{Array(options[:column]) * '_and_'}"
@@ -239,7 +241,7 @@ module ActiveRecord
             elsif options[:name]
               options[:name]
             else
-              raise ArgumentError 'You must specify the index name'
+              raise ArgumentError "You must specify the index name"
             end
           else
             index_name(table_name, index_name_options(options))
@@ -284,12 +286,12 @@ module ActiveRecord
 
                 if precision ||= native[:precision]
                   column_type_sql << if scale
-                                       "(#{precision},#{scale})"
-                                     else
-                                       "(#{precision})"
-                                     end
+                    "(#{precision},#{scale})"
+                  else
+                    "(#{precision})"
+                  end
                 elsif scale
-                  raise ArgumentError, 'Error adding decimal column: precision cannot be empty if scale is specified'
+                  raise ArgumentError, "Error adding decimal column: precision cannot be empty if scale is specified"
                 end
 
               elsif %i[datetime timestamp time interval].include?(type) && precision ||= native[:precision]
@@ -357,129 +359,128 @@ module ActiveRecord
         end
 
         private
-
-        def column_definitions(table_name)
-          @connection.columns(table_name)
-        end
-
-        def new_column_from_field(table_name, field)
-          type_metadata = column_type_for(field)
-          rdb_opt = { domain: field[:domain], sub_type: field[:sql_subtype] }
-          RdbColumn.new(field[:name], parse_default(field[:default]), type_metadata, field[:nullable], rdb_opt)
-        end
-
-        def column_type_for(field)
-          sql_type = RdbColumn.sql_type_for(field)
-          type = lookup_cast_type(sql_type)
-          rdb_options = {
-            domain: field[:domain],
-            sub_type: field[:sql_subtype]
-          }
-          simple_type = SqlTypeMetadata.new(
-            sql_type: sql_type,
-            type: type,
-            limit: type.limit,
-            precision: type.precision,
-            scale: type.scale
-          )
-          Rdb::TypeMetadata.new(simple_type, rdb_options)
-        end
-
-        def parse_default(default)
-          return if default.nil? || /null/i.match?(default)
-
-          d = default.dup
-          d.gsub!(/^\s*DEFAULT\s+/i, '')
-          d.gsub!(/(^'|'$)/, '')
-          d
-        end
-
-        def integer_to_sql(limit)
-          return 'integer' if limit.nil?
-
-          case limit
-          when 1..2 then
-            'smallint'
-          when 3..4 then
-            'integer'
-          when 5..8 then
-            'bigint'
-          else
-            raise ActiveRecordError "No integer type has byte size #{limit}. " \
-                                    'Use a NUMERIC with PRECISION 0 instead.'
+          def column_definitions(table_name)
+            @connection.columns(table_name)
           end
-        end
 
-        def float_to_sql(limit)
-          limit.nil? || limit <= 4 ? 'float' : 'double precision'
-        end
-
-        def text_to_sql(limit)
-          if limit && limit > 0
-            "VARCHAR(#{limit})"
-          else
-            'BLOB SUB_TYPE TEXT'
+          def new_column_from_field(table_name, field)
+            type_metadata = column_type_for(field)
+            rdb_opt = { domain: field[:domain], sub_type: field[:sql_subtype] }
+            RdbColumn.new(field[:name], parse_default(field[:default]), type_metadata, field[:nullable], rdb_opt)
           end
-        end
 
-        def string_to_sql(limit)
-          if limit && limit > 0 && limit < 255
-            "VARCHAR(#{limit})"
-          else
-            'VARCHAR(255)'
+          def column_type_for(field)
+            sql_type = RdbColumn.sql_type_for(field)
+            type = lookup_cast_type(sql_type)
+            rdb_options = {
+              domain: field[:domain],
+              sub_type: field[:sql_subtype]
+            }
+            simple_type = SqlTypeMetadata.new(
+              sql_type: sql_type,
+              type: type,
+              limit: type.limit,
+              precision: type.precision,
+              scale: type.scale
+            )
+            Rdb::TypeMetadata.new(simple_type, rdb_options)
           end
-        end
 
-        def initialize_native_database_types
-          {
-            primary_key: 'integer not null primary key',
-            string: { name: 'varchar', limit: 255 },
-            text: { name: 'blob sub_type text' },
-            integer: { name: 'integer' },
-            bigint: { name: 'bigint' },
-            float: { name: 'float' },
-            decimal: { name: 'decimal' },
-            datetime: { name: 'timestamp' },
-            timestamp: { name: 'timestamp' },
-            time: { name: 'time' },
-            date: { name: 'date' },
-            binary: { name: 'blob sub_type binary' },
-            boolean: { name: 'boolean' }
-          }
-        end
+          def parse_default(default)
+            return if default.nil? || /null/i.match?(default)
 
-        def create_table_definition(name, **options)
-          Rdb::TableDefinition.new(self, name, **options)
-        end
+            d = default.dup
+            d.gsub!(/^\s*DEFAULT\s+/i, "")
+            d.gsub!(/(^'|'$)/, "")
+            d
+          end
 
-        def squish_sql(sql)
-          sql.strip.gsub(/\s+/, ' ')
-        end
+          def integer_to_sql(limit)
+            return "integer" if limit.nil?
 
-        class << self
-          def after(*names)
-            names.flatten.each do |name|
-              m = ActiveRecord::ConnectionAdapters::Rdb::SchemaStatements.instance_method(name)
-              define_method(name) do |*args, &block|
-                m.bind(self).call(*args, &block)
-                yield
-                commit_db_transaction
+            case limit
+            when 1..2 then
+              "smallint"
+            when 3..4 then
+              "integer"
+            when 5..8 then
+              "bigint"
+            else
+              raise ActiveRecordError "No integer type has byte size #{limit}. " \
+                                      "Use a NUMERIC with PRECISION 0 instead."
+            end
+          end
+
+          def float_to_sql(limit)
+            limit.nil? || limit <= 4 ? "float" : "double precision"
+          end
+
+          def text_to_sql(limit)
+            if limit && limit > 0
+              "VARCHAR(#{limit})"
+            else
+              "BLOB SUB_TYPE TEXT"
+            end
+          end
+
+          def string_to_sql(limit)
+            if limit && limit > 0 && limit < 255
+              "VARCHAR(#{limit})"
+            else
+              "VARCHAR(255)"
+            end
+          end
+
+          def initialize_native_database_types
+            {
+              primary_key: "integer not null primary key",
+              string: { name: "varchar", limit: 255 },
+              text: { name: "blob sub_type text" },
+              integer: { name: "integer" },
+              bigint: { name: "bigint" },
+              float: { name: "float" },
+              decimal: { name: "decimal" },
+              datetime: { name: "timestamp" },
+              timestamp: { name: "timestamp" },
+              time: { name: "time" },
+              date: { name: "date" },
+              binary: { name: "blob sub_type binary" },
+              boolean: { name: "boolean" }
+            }
+          end
+
+          def create_table_definition(name, **options)
+            Rdb::TableDefinition.new(self, name, **options)
+          end
+
+          def squish_sql(sql)
+            sql.strip.gsub(/\s+/, " ")
+          end
+
+          class << self
+            def after(*names)
+              names.flatten.each do |name|
+                m = ActiveRecord::ConnectionAdapters::Rdb::SchemaStatements.instance_method(name)
+                define_method(name) do |*args, &block|
+                  m.bind_call(self, *args, &block)
+                  yield
+                  commit_db_transaction
+                end
               end
             end
           end
-        end
 
-        after(methods_to_commit){|_|}
+          after(methods_to_commit) { |_| }
 
-        def insert_versions_sql(versions)
-          sm_table = quote_table_name(schema_migration.table_name)
+          def insert_versions_sql(versions)
+            sm_table = quote_table_name(schema_migration.table_name)
 
-          if versions.is_a?(Array)
-            versions.map { |v| "INSERT INTO #{sm_table} (#{quote_column_name('version')}) VALUES (#{quote(v)});" }
-          else
-            ["INSERT INTO #{sm_table} (#{quote_column_name('version')}) VALUES (#{quote(versions)});"]
+            if versions.is_a?(Array)
+              versions.map { |v| "INSERT INTO #{sm_table} (#{quote_column_name('version')}) VALUES (#{quote(v)});" }
+            else
+              ["INSERT INTO #{sm_table} (#{quote_column_name('version')}) VALUES (#{quote(versions)});"]
+            end
           end
-        end
       end
     end
   end

@@ -32,12 +32,12 @@ module ActiveRecord
         end
 
         private
-        def deduplicated
-          __setobj__(__getobj__.deduplicate)
-          @sub_type = -sub_type if sub_type
-          @domain = -domain if domain
-          super
-        end
+          def deduplicated
+            __setobj__(__getobj__.deduplicate)
+            @sub_type = -sub_type if sub_type
+            @domain = -domain if domain
+            super
+          end
       end
     end
   end

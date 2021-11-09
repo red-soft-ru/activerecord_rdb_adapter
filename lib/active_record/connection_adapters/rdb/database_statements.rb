@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module ActiveRecord
   module ConnectionAdapters
     module Rdb
@@ -8,7 +10,7 @@ module ActiveRecord
         private_constant :READ_QUERY
 
         def write_query?(sql) # :nodoc:
-        !READ_QUERY.match?(sql)
+          !READ_QUERY.match?(sql)
         end
 
         def execute(sql, name = nil)
@@ -22,7 +24,7 @@ module ActiveRecord
           end
         end
 
-        def exec_query(sql, name = 'SQL', binds = [], prepare: false)
+        def exec_query(sql, name = "SQL", binds = [], prepare: false)
           materialize_transactions
           mark_transaction_written_if_write(sql)
 
@@ -51,7 +53,7 @@ module ActiveRecord
 
         # Begins the transaction (and turns off auto-committing).
         def begin_db_transaction
-          log('begin transaction', nil) do
+          log("begin transaction", nil) do
             begin_isolated_db_transaction(default_transaction_isolation)
           end
         end
@@ -60,9 +62,9 @@ module ActiveRecord
         # in 4.0.2+, so it's here for backward compatibility with AR 3
         def transaction_isolation_levels
           {
-            read_committed: 'READ COMMITTED',
-            repeatable_read: 'REPEATABLE READ',
-            serializable: 'SERIALIZABLE'
+            read_committed: "READ COMMITTED",
+            repeatable_read: "REPEATABLE READ",
+            serializable: "SERIALIZABLE"
           }
         end
 
@@ -74,13 +76,13 @@ module ActiveRecord
 
         # Commits the transaction (and turns on auto-committing).
         def commit_db_transaction
-          log('commit transaction', nil) { @connection.commit }
+          log("commit transaction", nil) { @connection.commit }
         end
 
         # Rolls back the transaction (and turns on auto-committing). Must be
         # done if the transaction block raises an exception or returns false.
         def rollback_db_transaction
-          log('rollback transaction', nil) { @connection.rollback }
+          log("rollback transaction", nil) { @connection.rollback }
         end
 
         def default_sequence_name(table_name, _column = nil)
@@ -104,33 +106,32 @@ module ActiveRecord
         end
 
         private
-
-        # Default column value for fixtures.
-        # Used when fixture does not specify column value.
-        # For such columns Rails inserts a DEFAULT value.
-        # Change it to the NULL of default column value
-        def default_insert_value(column)
-          if column.default.nil?
-            Arel.sql('NULL')
-          else
-            Arel.sql(quote(column.default).to_s)
+          # Default column value for fixtures.
+          # Used when fixture does not specify column value.
+          # For such columns Rails inserts a DEFAULT value.
+          # Change it to the NULL of default column value
+          def default_insert_value(column)
+            if column.default.nil?
+              Arel.sql("NULL")
+            else
+              Arel.sql(quote(column.default).to_s)
+            end
           end
-        end
 
-        # RedDatabase does not support bulk inserts.
-        # Split all fixtures in multiple insert queries.
-        def build_fixture_statements(fixture_set)
-          fixture_set.flat_map do |table_name, fixtures|
-            next if fixtures.empty?
-            fixtures.map { |fixture| build_fixture_sql([fixture], table_name) }
-          end.compact
-        end
+          # RedDatabase does not support bulk inserts.
+          # Split all fixtures in multiple insert queries.
+          def build_fixture_statements(fixture_set)
+            fixture_set.flat_map do |table_name, fixtures|
+              next if fixtures.empty?
+              fixtures.map { |fixture| build_fixture_sql([fixture], table_name) }
+            end.compact
+          end
 
-        # Default DELETE FROM TABLE_NAME clears all data from table.
-        # Override Rails's truncate statement.
-        def build_truncate_statement(table_name)
-          "DELETE FROM #{quote_table_name(table_name)}"
-        end
+          # Default DELETE FROM TABLE_NAME clears all data from table.
+          # Override Rails's truncate statement.
+          def build_truncate_statement(table_name)
+            "DELETE FROM #{quote_table_name(table_name)}"
+          end
       end
     end
   end

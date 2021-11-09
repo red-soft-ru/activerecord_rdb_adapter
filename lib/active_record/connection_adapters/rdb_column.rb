@@ -16,14 +16,14 @@ module ActiveRecord
                       when /(int|float|double|char|varchar|bigint)/i
                         "(#{field[:length]})"
                       else
-                        ''
-                      end
+                        ""
+          end
           if /blob/i.match?(sql_type)
             sql_type << if sub_type == 1
-                          ' sub_type text'
-                        elsif sub_type == 0
-                          ' sub_type binary'
-                        end
+              " sub_type text"
+            elsif sub_type == 0
+              " sub_type binary"
+            end
           end
 
           sql_type
@@ -31,7 +31,6 @@ module ActiveRecord
       end
 
       private
-
         def simplified_type(field_type)
           return :datetime if /timestamp/i.match?(field_type)
           return :text if /blob sub_type text/i.match?(field_type)

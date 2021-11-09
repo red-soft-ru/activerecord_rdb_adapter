@@ -1,23 +1,23 @@
 # frozen_string_literal: true
 
-require 'fb'
-require 'base64'
-require 'arel'
-require 'arel/visitors/rdb_visitor'
-require 'active_record/rdb_patches/sql_literal_patch'
+require "fb"
+require "base64"
+require "arel"
+require "arel/visitors/rdb_visitor"
+require "active_record/rdb_patches/sql_literal_patch"
 
-require 'active_record'
-require 'active_record/base'
-require 'active_record/connection_adapters/abstract_adapter'
-require 'active_record/connection_adapters/rdb/database_statements'
-require 'active_record/connection_adapters/rdb/database_limits'
-require 'active_record/connection_adapters/rdb/schema_creation'
-require 'active_record/connection_adapters/rdb/schema_dumper'
-require 'active_record/connection_adapters/rdb/schema_statements'
-require 'active_record/connection_adapters/rdb/quoting'
-require 'active_record/connection_adapters/rdb/table_definition'
-require 'active_record/connection_adapters/rdb_column'
-require 'active_record/connection_adapters/rdb/type_metadata'
+require "active_record"
+require "active_record/base"
+require "active_record/connection_adapters/abstract_adapter"
+require "active_record/connection_adapters/rdb/database_statements"
+require "active_record/connection_adapters/rdb/database_limits"
+require "active_record/connection_adapters/rdb/schema_creation"
+require "active_record/connection_adapters/rdb/schema_dumper"
+require "active_record/connection_adapters/rdb/schema_statements"
+require "active_record/connection_adapters/rdb/quoting"
+require "active_record/connection_adapters/rdb/table_definition"
+require "active_record/connection_adapters/rdb_column"
+require "active_record/connection_adapters/rdb/type_metadata"
 
 module ActiveRecord
   module ConnectionHandling # :nodoc:
@@ -54,7 +54,7 @@ module ActiveRecord
 
   module ConnectionAdapters
     class RdbAdapter < AbstractAdapter # :nodoc:
-      ADAPTER_NAME = 'RedDatabase'
+      ADAPTER_NAME = "RedDatabase"
 
       include Rdb::DatabaseLimits
       include Rdb::DatabaseStatements
@@ -133,7 +133,7 @@ module ActiveRecord
       def active?
         return false unless @connection.open?
 
-        @connection.query('SELECT 1 FROM RDB$DATABASE')
+        @connection.query("SELECT 1 FROM RDB$DATABASE")
         true
       rescue StandardError
         false
@@ -178,31 +178,30 @@ module ActiveRecord
       end
 
       protected
-
-      def initialize_type_map(m = type_map)
-        super
-        m.register_type(%r(timestamp)i, Type::DateTime.new)
-        m.alias_type(%r(blob sub_type text)i, "text")
-        m.alias_type(%r(blob sub_type binary)i, "binary")
-      end
-
-      def translate_exception(exception, message:, sql:, binds:)
-        case exception.message
-        when /violation of FOREIGN KEY constraint/
-          ActiveRecord::InvalidForeignKey.new(message, sql: sql, binds: binds)
-        when /violation of PRIMARY or UNIQUE KEY constraint/, /attempt to store duplicate value/
-          ActiveRecord::RecordNotUnique.new(message, sql: sql, binds: binds)
-        when /This operation is not defined for system tables/
-          ActiveRecord::ActiveRecordError.new(message)
-        when /Column does not belong to referenced table/,
-          /Unsuccessful execution caused by system error that does not preclude successful execution of subsequent statements/,
-          /The cursor identified in the UPDATE or DELETE statement is not positioned on a row/,
-          /Overflow occurred during data type conversion/
-          ActiveRecord::StatementInvalid.new(message, sql: sql, binds: binds)
-        else
+        def initialize_type_map(m = type_map)
           super
+          m.register_type(%r(timestamp)i, Type::DateTime.new)
+          m.alias_type(%r(blob sub_type text)i, "text")
+          m.alias_type(%r(blob sub_type binary)i, "binary")
         end
-      end
+
+        def translate_exception(exception, message:, sql:, binds:)
+          case exception.message
+          when /violation of FOREIGN KEY constraint/
+            ActiveRecord::InvalidForeignKey.new(message, sql: sql, binds: binds)
+          when /violation of PRIMARY or UNIQUE KEY constraint/, /attempt to store duplicate value/
+            ActiveRecord::RecordNotUnique.new(message, sql: sql, binds: binds)
+          when /This operation is not defined for system tables/
+            ActiveRecord::ActiveRecordError.new(message)
+          when /Column does not belong to referenced table/,
+            /Unsuccessful execution caused by system error that does not preclude successful execution of subsequent statements/,
+            /The cursor identified in the UPDATE or DELETE statement is not positioned on a row/,
+            /Overflow occurred during data type conversion/
+            ActiveRecord::StatementInvalid.new(message, sql: sql, binds: binds)
+          else
+            super
+          end
+        end
     end
   end
 end

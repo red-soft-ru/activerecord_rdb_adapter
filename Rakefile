@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require 'rake'
-require 'rake/testtask'
+require "rake"
+require "rake/testtask"
 
 require_relative "test/config"
 require_relative "test/support/config"

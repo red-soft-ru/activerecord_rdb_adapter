@@ -58,7 +58,7 @@ class RdbAdapterTest < ActiveRecord::TestCase
   end
 
   def test_early_return_from_transaction
-    foo = Bar.create!(v1: '1')
+    foo = Bar.create!(v1: "1")
 
     assert_not_deprecated do
       foo.with_lock do
