@@ -9,8 +9,10 @@ class RdbAdapterTest < ActiveRecord::TestCase
   end
 
   def test_bad_connection
+    config = ARTest.config["default"]
+    config[:database] = "/tmp/should/_not/_exist/-cinco-dog.db"
     assert_raises ActiveRecord::NoDatabaseError, ("No database connection established") do
-      ActiveRecord::Base.rdb_connection(adapter: "rdb", database: "/tmp/should/_not/_exist/-cinco-dog.db")
+      ActiveRecord::Base.rdb_connection(config)
     end
   end
 
