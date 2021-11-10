@@ -23,12 +23,7 @@ module ActiveRecord
   module ConnectionHandling # :nodoc:
     # Establishes a connection to the database that's used by all Active Record objects
     def rdb_connection(config)
-      config = config.symbolize_keys.dup.reverse_merge(downcase_names: true)
-
-      # Require database.
-      unless config[:database]
-        raise ArgumentError, "No database file specified. Missing argument: database"
-      end
+      config = rdb_connection_config(config)
 
       # Initialize Database with Hash of values:
       #  :database:: Full Firebird connection string, e.g. 'localhost:/var/fbdata/drivertest.fdb' (required)
@@ -49,6 +44,23 @@ module ActiveRecord
       else
         raise ActiveRecord::ConnectionNotEstablished, error.message
       end
+    end
+
+    def rdb_connection_config(config)
+      config = config.symbolize_keys.dup.reverse_merge(downcase_names: true)
+
+      # Require database.
+      unless config[:database]
+        raise ArgumentError, "No database file specified. Missing argument: database"
+      end
+
+      # Generate full connection string as extension requires
+      # If host or port not specified in config
+      # Defaults to 0.0.0.0 and 3050 respectively
+      host = config.fetch(:host) { "0.0.0.0" }
+      port = config.fetch(:port) { "3050" }
+      config[:database] = "#{host}/#{port}:#{config[:database]}"
+      config
     end
   end
 

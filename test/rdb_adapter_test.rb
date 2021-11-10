@@ -72,4 +72,10 @@ class RdbAdapterTest < ActiveRecord::TestCase
       assert_equal Bar.where(id: [1, 2], v1: "123").to_sql, %{SELECT "BARS".* FROM "BARS" WHERE ("BARS"."ID" IN (1) OR "BARS"."ID" IN (2)) AND "BARS"."V1" = '123'}
     end
   end
+
+  def test_default_connection_string
+    con_config = ActiveRecord::Base.rdb_connection_config(adapter: "rdb", database: "/db/test.fdb")
+
+    assert_equal "0.0.0.0/3050:/db/test.fdb", con_config[:database]
+  end
 end
