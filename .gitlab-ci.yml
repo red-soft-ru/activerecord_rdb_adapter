@@ -1,20 +1,16 @@
 test:
   variables:
-    DOCKER_DRIVER: overlay2
-    DEBIAN_FRONTEND: noninteractive
     TZ: "Europe/Moscow"
     AR_HOST: RedDatabase
     RDB_VERSION: 3.0.8.0
   image: ruby:2.7
   services:
-    - name: registry.red-soft.biz:5000/docker-images/red-database/enterprise:3
+    - name: $CI_RDB_IMAGE
       alias: RedDatabase
   before_script:
-    - echo $CI_DOWNLOAD_LINK
-    - echo $CI_RDB_IMAGE
     - apt-get update
     - apt-get install build-essential patch curl libncurses5 git -y
-    - curl http://builds.red-soft.biz/release_hub/rdb30/3.0.8.0/download/red-database:linux-x86_64-enterprise:3.0.8.0:bin -o /tmp/installer
+    - curl $CI_DOWNLOAD_LINK -o /tmp/installer
     - chmod +x /tmp/installer &&\
     - /tmp/installer --architecture Super --mode unattended
     - cp -R /opt/RedDatabase/include/* /usr/include
