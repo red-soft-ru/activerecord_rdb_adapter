@@ -75,8 +75,11 @@ module ActiveRecord
         def isql_executable
           require "mkmf"
           exe =
-            if find_executable "docker"
-              "docker exec -it RedDatabase isql"
+            if Pathname("/opt/RedDatabase").exist?
+              "/opt/RedDatabase/bin/isql"
+            # not so useful but would work
+            # elsif find_executable "docker"
+            #   "docker exec -it RedDatabase isql"
             else
               %w[isql-fb isql].detect(&method(:find_executable0))
             end
