@@ -11,7 +11,7 @@ test:
 #    - sleep 10h
     - ls -l /usr/lib
     - apt-get update
-    - apt-get curl install libncurses5 git -y
+    - apt-get install curl libncurses5 git -y
     - curl http://builds.red-soft.biz/release_hub/rdb30/3.0.8.0/download/red-database:linux-x86_64-enterprise:3.0.8.0:bin -o /tmp/installer
     - chmod +x /tmp/installer &&\
     - /tmp/installer --architecture Super --mode unattended
