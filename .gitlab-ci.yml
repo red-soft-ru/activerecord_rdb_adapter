@@ -17,6 +17,5 @@ test:
     - cp -R /opt/RedDatabase/include/* /usr/include
     - cp -R /opt/RedDatabase/lib/* /usr/lib/x86_64-linux-gnu
     - bundle install
-    - sleep 10h
     - bundle exec rake db:build
   script: bundle exec rake test
