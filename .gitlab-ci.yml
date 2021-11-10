@@ -4,11 +4,14 @@ test:
     DEBIAN_FRONTEND: noninteractive
     TZ: "Europe/Moscow"
     AR_HOST: RedDatabase
+    RDB_VERSION: 3.0.8.0
   image: ruby:2.7
   services:
     - name: registry.red-soft.biz:5000/docker-images/red-database/enterprise:3
       alias: RedDatabase
   before_script:
+    - echo $CI_DOWNLOAD_LINK
+    - echo $CI_RDB_IMAGE
     - apt-get update
     - apt-get install build-essential patch curl libncurses5 git -y
     - curl http://builds.red-soft.biz/release_hub/rdb30/3.0.8.0/download/red-database:linux-x86_64-enterprise:3.0.8.0:bin -o /tmp/installer
