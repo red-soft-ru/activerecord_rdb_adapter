@@ -54,7 +54,7 @@ module ActiveRecord
         # Begins the transaction (and turns off auto-committing).
         def begin_db_transaction
           log("BEGIN", "TRANSACTION") do
-            begin_isolated_db_transaction(default_transaction_isolation)
+            @connection.transaction
           end
         end
 
