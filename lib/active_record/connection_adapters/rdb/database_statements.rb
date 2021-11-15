@@ -53,7 +53,7 @@ module ActiveRecord
 
         # Begins the transaction (and turns off auto-committing).
         def begin_db_transaction
-          log("begin transaction", nil) do
+          log("BEGIN", "TRANSACTION") do
             begin_isolated_db_transaction(default_transaction_isolation)
           end
         end
@@ -71,18 +71,20 @@ module ActiveRecord
         # Allows providing the :transaction option to ActiveRecord::Base.transaction
         # in 4.0.2+. Can accept verbatim isolation options like 'WAIT READ COMMITTED'
         def begin_isolated_db_transaction(isolation)
-          @connection.transaction transaction_isolation_levels.fetch(isolation, isolation)
+          log("BEGIN", "TRANSACTION") do
+            @connection.transaction transaction_isolation_levels.fetch(isolation, isolation)
+          end
         end
 
         # Commits the transaction (and turns on auto-committing).
         def commit_db_transaction
-          log("commit transaction", nil) { @connection.commit }
+          log("COMMIT", "TRANSACTION") { @connection.commit }
         end
 
         # Rolls back the transaction (and turns on auto-committing). Must be
         # done if the transaction block raises an exception or returns false.
         def rollback_db_transaction
-          log("rollback transaction", nil) { @connection.rollback }
+          log("ROLLBACK", "TRANSACTION") { @connection.rollback }
         end
 
         def default_sequence_name(table_name, _column = nil)
