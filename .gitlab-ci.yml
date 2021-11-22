@@ -1,0 +1,20 @@
+test:
+  variables:
+    TZ: "Europe/Moscow"
+    AR_HOST: RedDatabase
+    RDB_VERSION: 3.0.8.0
+  image: ruby:2.7
+  services:
+    - name: $CI_RDB_IMAGE
+      alias: RedDatabase
+  before_script:
+    - apt-get update
+    - apt-get install build-essential patch curl libncurses5 git -y
+    - curl $CI_DOWNLOAD_LINK -o /tmp/installer
+    - chmod +x /tmp/installer &&\
+    - /tmp/installer --architecture Super --mode unattended
+    - cp -R /opt/RedDatabase/include/* /usr/include
+    - cp -R /opt/RedDatabase/lib/* /usr/lib/x86_64-linux-gnu
+    - bundle install
+    - bundle exec rake db:build
+  script: bundle exec rake test
