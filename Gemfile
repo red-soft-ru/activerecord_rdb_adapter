@@ -4,7 +4,7 @@ source "https://rubygems.org"
 
 gemspec
 
-gem "firebird", git: "http://git.red-soft.biz/red2mine/fb.git", ref: "07b90172407a3e1615d259e0010879824c4211c5"
+gem "firebird", git: "http://git.red-soft.biz/red2mine/fb.git", ref: "b8b6ac76604ef29ceda6a71de2be9697804083d6"
 
 group :rubocop do
   gem "rubocop", ">= 0.90", require: false
