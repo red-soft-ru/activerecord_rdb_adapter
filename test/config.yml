@@ -1,0 +1,10 @@
+default:
+  adapter: rdb
+  host: <%= ENV.fetch("AR_HOST") { '0.0.0.0' } %>
+  port: <%= ENV.fetch("AR_PORT") { 3050 } %>
+  database: /db/activerecord-rdb-adapter.fdb
+  username: <%= ENV.fetch("AR_USER") { 'SYSDBA' } %>
+  password: <%= ENV.fetch("AR_PASSWORD") { 'masterkey' } %>
+  encoding: <%= ENV.fetch("AR_ENCODING") { 'UTF-8' } %>
+  charset: <%= ENV.fetch("AR_CHARSET") { 'UTF8' } %>
+  page_size: <%= ENV.fetch("AR_PAGE_SIZE") { '8192' } %>
