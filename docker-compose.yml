@@ -1,0 +1,22 @@
+version: '3'
+
+services:
+  db:
+    container_name: RedDatabase
+    image: redsoftru/red-database-open:3
+    volumes:
+      - /db:/db
+    tmpfs:
+      - /tmp:exec,size=1G
+    environment:
+      # database.conf
+      #RDB_DATABASES__my_db: "/db/my_db.fdb"
+      # firebird.conf
+      RDB__ServerMode: "Super"
+      RDB__UserManager: "Legacy_UserManager"
+      RDB__WireCrypt: "Disabled"
+      RDB__AuthServer: "Legacy_Auth"
+      RDB__AuthClient: "Legacy_Auth"
+    restart: always
+    ports:
+      - 3050:3050
