@@ -3,7 +3,7 @@
 Gem::Specification.new do |s|
   s.author = "REDSOFT"
   s.name = "activerecord-rdb-adapter"
-  s.version = "6.1.0.beta1"
+  s.version = "6.1.0"
   s.summary = "ActiveRecord RedDatabase 3+ and Firebird 3+ Adapter"
   s.description = "ActiveRecord RedDatabase 3+ and Firebird 3+ Adapter for Rails 6+"
 
