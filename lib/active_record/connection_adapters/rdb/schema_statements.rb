@@ -58,25 +58,25 @@ module ActiveRecord
             needs_sequence ||= table_def.needs_sequence
           end
 
-          return if options[:sequence] == false || !needs_sequence
-
-          create_sequence(options[:sequence] || default_sequence_name(name))
-          trg_sql = <<-END_SQL
-            CREATE TRIGGER N$#{name.upcase} FOR #{name.upcase}
-            ACTIVE BEFORE INSERT
-            AS
-            declare variable gen_val bigint;
-            BEGIN
-              if (new.ID is null) then
-                new.ID = next value for #{options[:sequence] || default_sequence_name(name)};
-              else begin
-                gen_val = gen_id(#{options[:sequence] || default_sequence_name(name)}, 1);
-                if (new.ID > gen_val) then
-                  gen_val = gen_id(#{options[:sequence] || default_sequence_name(name)}, new.ID - gen_val);
-              end
-            END
-          END_SQL
-          execute(trg_sql)
+          if options[:sequence] || needs_sequence
+            create_sequence(options[:sequence] || default_sequence_name(name))
+            trg_sql = <<~END_SQL
+              CREATE TRIGGER N$#{name.upcase} FOR #{name.upcase}
+              ACTIVE BEFORE INSERT
+              AS
+              declare variable gen_val bigint;
+              BEGIN
+                if (new.ID is null) then
+                  new.ID = next value for #{options[:sequence] || default_sequence_name(name)};
+                else begin
+                  gen_val = gen_id(#{options[:sequence] || default_sequence_name(name)}, 0);
+                  if (new.ID > gen_val) then
+                    gen_val = gen_id(#{options[:sequence] || default_sequence_name(name)}, new.ID - gen_val);
+                end
+              END
+            END_SQL
+            execute(trg_sql)
+          end
         end
 
         def drop_table(name, options = {}) # :nodoc:
