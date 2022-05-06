@@ -189,6 +189,10 @@ module ActiveRecord
         @connection.encoding
       end
 
+      def get_database_version # :nodoc:
+        RdbAdapter::Version.new(query_value("select rdb$get_context('SYSTEM', 'ENGINE_VERSION') as version from rdb$database;"))
+      end
+
       protected
         def initialize_type_map(m = type_map)
           super
