@@ -433,7 +433,7 @@ module ActiveRecord
 
           def initialize_native_database_types
             {
-              primary_key: "integer not null primary key",
+              primary_key: "bigint not null primary key",
               string: { name: "varchar", limit: 255 },
               text: { name: "blob sub_type text" },
               integer: { name: "integer" },
