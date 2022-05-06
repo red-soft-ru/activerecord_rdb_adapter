@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.summary = "ActiveRecord RedDatabase 3+ and Firebird 3+ Adapter"
   s.description = "ActiveRecord RedDatabase 3+ and Firebird 3+ Adapter for Rails 6+"
 
-  s.required_ruby_version = ">= 2.5.0"
+  s.required_ruby_version = ">= 2.7.0"
 
   s.licenses = "MIT"
 
