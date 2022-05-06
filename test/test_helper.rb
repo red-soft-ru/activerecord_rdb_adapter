@@ -5,7 +5,6 @@ Bundler.require(:default, :development)
 
 require "config"
 
-require "rails"
 require "active_support"
 require "active_support/testing/autorun"
 require "active_support/testing/method_call_assertions"
