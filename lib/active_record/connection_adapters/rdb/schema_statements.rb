@@ -358,6 +358,10 @@ module ActiveRecord
           end
         end
 
+        def internal_string_options_for_primary_key # :nodoc:
+          { primary_key: true, limit: 255 }
+        end
+
         private
           def column_definitions(table_name)
             @connection.columns(table_name)
@@ -424,7 +428,7 @@ module ActiveRecord
           end
 
           def string_to_sql(limit)
-            if limit && limit > 0 && limit < 255
+            if limit && limit > 0
               "VARCHAR(#{limit})"
             else
               "VARCHAR(255)"
