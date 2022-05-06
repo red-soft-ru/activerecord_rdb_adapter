@@ -15,4 +15,5 @@ Gem::Specification.new do |s|
   s.require_paths = "lib"
 
   s.add_dependency "activerecord", "~> 6.1"
+  s.add_dependency "rake"
 end
