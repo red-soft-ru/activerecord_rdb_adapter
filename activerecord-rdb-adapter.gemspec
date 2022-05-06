@@ -14,5 +14,5 @@ Gem::Specification.new do |s|
   s.files = Dir["README.md", "lib/**/*"]
   s.require_paths = "lib"
 
-  s.add_dependency "rails", "~> 6.1"
+  s.add_dependency "activerecord", "~> 6.1"
 end
