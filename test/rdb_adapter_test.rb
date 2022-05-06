@@ -40,7 +40,7 @@ class RdbAdapterTest < ActiveRecord::TestCase
   end
 
   def test_foreign_key_violations_are_translated_to_specific_exception
-    @connection.execute %{alter table bars add fk integer references bars}
+    @connection.execute %{alter table bars add fk bigint references bars}
     error = assert_raises(ActiveRecord::InvalidForeignKey) do
       @connection.execute %{insert into bars (v1, fk) values ('3', 1000)}
     end
