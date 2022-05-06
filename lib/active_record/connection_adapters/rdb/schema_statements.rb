@@ -248,6 +248,11 @@ module ActiveRecord
           end
         end
 
+        def add_reference(table_name, ref_name, **options)
+          Rdb::ReferenceDefinition.new(ref_name, **options).add_to(update_table_definition(table_name, self))
+        end
+        alias :add_belongs_to :add_reference
+
         def index_exists?(table_name, column_name, options = {})
           column_names = Array(column_name).map(&:to_s)
           checks = []
