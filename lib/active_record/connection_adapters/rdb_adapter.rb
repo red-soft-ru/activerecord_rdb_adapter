@@ -38,10 +38,10 @@ module ActiveRecord
 
       ConnectionAdapters::RdbAdapter.new(db, logger, config)
     rescue ::Fb::Error => error
-      pp config
       if error.message.include?("No such file or directory")
         raise ActiveRecord::NoDatabaseError
       else
+        pp config
         raise ActiveRecord::ConnectionNotEstablished, error.message
       end
     end
