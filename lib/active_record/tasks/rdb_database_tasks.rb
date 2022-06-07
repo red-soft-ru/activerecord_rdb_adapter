@@ -3,10 +3,10 @@
 module ActiveRecord
   module Tasks # :nodoc:
     class RdbDatabaseTasks # :nodoc:
-      delegate :rdb_connection, :establish_connection, to: ::ActiveRecord::Base
+      delegate :rdb_connection, :establish_connection, :rdb_connection_config, to: ::ActiveRecord::Base
 
       def initialize(db_config)
-        @db_config = db_config
+        @db_config = rdb_connection_config(db_config)
       end
 
       def create
