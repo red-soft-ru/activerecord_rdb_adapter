@@ -375,7 +375,7 @@ module ActiveRecord
           def new_column_from_field(table_name, field)
             type_metadata = column_type_for(field)
             rdb_opt = { domain: field[:domain], sub_type: field[:sql_subtype] }
-            RdbColumn.new(field[:name], parse_default(field[:default]), type_metadata, field[:nullable], rdb_opt)
+            RdbColumn.new(field[:name], parse_default(field[:default]), type_metadata, field[:nullable], **rdb_opt)
           end
 
           def column_type_for(field)
@@ -392,7 +392,7 @@ module ActiveRecord
               precision: type.precision,
               scale: type.scale
             )
-            Rdb::TypeMetadata.new(simple_type, rdb_options)
+            Rdb::TypeMetadata.new(simple_type, **rdb_options)
           end
 
           def parse_default(default)
