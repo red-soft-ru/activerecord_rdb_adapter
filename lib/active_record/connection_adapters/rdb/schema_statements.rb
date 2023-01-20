@@ -4,20 +4,6 @@ module ActiveRecord
   module ConnectionAdapters
     module Rdb
       module SchemaStatements # :nodoc:
-        methods_to_commit = %i[add_column
-                               change_column
-                               change_column_default
-                               change_column_null
-                               create_sequence
-                               create_table
-                               drop_sequence
-                               drop_table
-                               drop_trigger
-                               remove_column
-                               remove_index
-                               remove_index!
-                               rename_column]
-
         def tables(_name = nil)
           @connection.table_names
         end
@@ -465,21 +451,6 @@ module ActiveRecord
           def squish_sql(sql)
             sql.strip.gsub(/\s+/, " ")
           end
-
-          class << self
-            def after(*names)
-              names.flatten.each do |name|
-                m = ActiveRecord::ConnectionAdapters::Rdb::SchemaStatements.instance_method(name)
-                define_method(name) do |*args, &block|
-                  m.bind_call(self, *args, &block)
-                  yield
-                  commit_db_transaction
-                end
-              end
-            end
-          end
-
-          after(methods_to_commit) { |_| }
 
           def insert_versions_sql(versions)
             sm_table = quote_table_name(schema_migration.table_name)

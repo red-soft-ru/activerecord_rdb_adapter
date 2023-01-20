@@ -110,8 +110,11 @@ module ActiveRecord
         true
       end
 
+      # AR wraps all migrations in a transaction and rollbacks it if there is a error.
+      # Firebird doesn't support mixing of DDL and DML statements in one transaction.
+      # In other words, there is no way to use CREATE TABLE and INSERT INTO within a single transaction.
       def supports_ddl_transactions?
-        true
+        false
       end
 
       def supports_transaction_isolation?
