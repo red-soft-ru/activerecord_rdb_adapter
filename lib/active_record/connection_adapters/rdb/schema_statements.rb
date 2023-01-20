@@ -170,10 +170,23 @@ module ActiveRecord
         end
 
         def change_column_default(table_name, column_name, default)
+          column = column_for(table_name, column_name)
+
+          # Column doesn't have a default value
+          # Nothing to alter or drop
+          return if default.nil? && column.default.nil?
+
+          default_stmn =
+            if default.nil? # Remove default column value
+              "DROP DEFAULT"
+            else
+              "SET DEFAULT #{quote(default)}"
+            end
+
           execute(squish_sql(<<-END_SQL))
             ALTER TABLE #{quote_table_name(table_name)}
             ALTER #{quote_column_name(column_name)}
-            SET DEFAULT #{quote(default)}
+            #{default_stmn}
           END_SQL
         end
 
