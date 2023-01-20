@@ -271,6 +271,8 @@ module ActiveRecord
           case type
           when :integer
             integer_to_sql(limit)
+          when :bigint
+            'bigint'
           when :float
             float_to_sql(limit)
           when :text

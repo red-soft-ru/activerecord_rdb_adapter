@@ -200,6 +200,7 @@ module ActiveRecord
         def initialize_type_map(m = type_map)
           super
           m.register_type(%r(timestamp)i, Type::DateTime.new)
+          m.register_type(%r(bigint)i, Type::Integer.new(limit: 8))
           m.alias_type(%r(blob sub_type text)i, "text")
           m.alias_type(%r(blob sub_type binary)i, "binary")
         end
