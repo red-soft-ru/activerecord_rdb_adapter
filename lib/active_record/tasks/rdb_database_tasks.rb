@@ -36,6 +36,10 @@ module ActiveRecord
       # ================================================================
       # TODO: probably not working
       def structure_dump(filename, structure_dump_flags = nil)
+        if File.exists? filename
+          FileUtils.rm filename
+        end
+
         isql :extract, output: filename
       end
 
