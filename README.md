@@ -12,7 +12,7 @@ GUI Database Editor for RedDatabase/Firebird: [RedExpert](https://reddatabase.ru
 Put in your gemfile
 
 ```ruby
-gem "firebird", :git => "https://github.com/red-soft-ru/ruby-fb.git", :branch => "master"
+gem "fb", :git => "https://github.com/red-soft-ru/ruby-fb.git", :branch => "master"
 gem "activerecord-rdb-adapter", :git => "https://github.com/red-soft-ru/activerecord_rdb_adapter.git", :branch => "6-1-stable"
 ```
 
