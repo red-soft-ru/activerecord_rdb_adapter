@@ -4,20 +4,6 @@ module ActiveRecord
   module ConnectionAdapters
     module Rdb
       module SchemaStatements # :nodoc:
-        methods_to_commit = %i[add_column
-                               change_column
-                               change_column_default
-                               change_column_null
-                               create_sequence
-                               create_table
-                               drop_sequence
-                               drop_table
-                               drop_trigger
-                               remove_column
-                               remove_index
-                               remove_index!
-                               rename_column]
-
         def tables(_name = nil)
           @connection.table_names
         end
@@ -44,34 +30,32 @@ module ActiveRecord
           end
         end
 
-        def create_table(name, options = {}) # :nodoc:
+        def create_table(table_name, id: :primary_key, primary_key: nil, force: nil, **options)
           raise ActiveRecordError, "Firebird does not support temporary tables" if options.key? :temporary
 
           raise ActiveRecordError, "Firebird does not support creating tables with a select" if options.key? :as
 
-          drop_table name, if_exists: true if options.key? :force
-
           needs_sequence = options[:id]
 
-          super name, options do |table_def|
+          super do |table_def|
             yield table_def if block_given?
             needs_sequence ||= table_def.needs_sequence
           end
 
           if options[:sequence] || needs_sequence
-            create_sequence(options[:sequence] || default_sequence_name(name))
+            create_sequence(options[:sequence] || default_sequence_name(table_name))
             trg_sql = <<~END_SQL
-              CREATE TRIGGER N$#{name.upcase} FOR #{name.upcase}
+              CREATE TRIGGER N$#{table_name.upcase} FOR #{table_name.upcase}
               ACTIVE BEFORE INSERT
               AS
               declare variable gen_val bigint;
               BEGIN
                 if (new.ID is null) then
-                  new.ID = next value for #{options[:sequence] || default_sequence_name(name)};
+                  new.ID = next value for #{options[:sequence] || default_sequence_name(table_name)};
                 else begin
-                  gen_val = gen_id(#{options[:sequence] || default_sequence_name(name)}, 0);
+                  gen_val = gen_id(#{options[:sequence] || default_sequence_name(table_name)}, 0);
                   if (new.ID > gen_val) then
-                    gen_val = gen_id(#{options[:sequence] || default_sequence_name(name)}, new.ID - gen_val);
+                    gen_val = gen_id(#{options[:sequence] || default_sequence_name(table_name)}, new.ID - gen_val);
                 end
               END
             END_SQL
@@ -79,24 +63,16 @@ module ActiveRecord
           end
         end
 
-        def drop_table(name, options = {}) # :nodoc:
-          drop_sql = "DROP TABLE #{quote_table_name(name)}"
-          drop = if options[:if_exists]
-            !execute(squish_sql(<<-END_SQL))
-          select 1 from rdb$relations where rdb$relation_name = #{quote_table_name(name).tr('"', '\'')}
-            END_SQL
-                 .empty?
-          else
-            false
+        def drop_table(table_name, **options)
+          schema_cache.clear_data_source_cache!(table_name.to_s)
+          unless options[:sequence] == false
+            sequence_name = options[:sequence] || default_sequence_name(table_name)
+            trigger_name = "n$#{table_name}"
+            drop_trigger(trigger_name) if trigger_exists?(trigger_name)
+            drop_sequence(sequence_name) if sequence_exists?(sequence_name)
           end
 
-          trigger_name = "N$#{name.upcase}"
-          drop_trigger(trigger_name) if trigger_exists?(trigger_name)
-
-          sequence_name = options[:sequence] || default_sequence_name(name)
-          drop_sequence(sequence_name) if sequence_exists?(sequence_name)
-
-          execute(drop_sql) if drop
+          execute("DROP TABLE #{quote_table_name(table_name)}") if table_exists?(table_name)
         end
 
         def create_sequence(sequence_name)
@@ -122,15 +98,14 @@ module ActiveRecord
         end
 
         def trigger_exists?(trigger_name)
-          !execute(squish_sql(<<-END_SQL))
-            select 1
-            from rdb$triggers
-             where rdb$trigger_name = '#{trigger_name}'
-          END_SQL
-            .empty?
+          @connection.trigger_names.include?(trigger_name)
         end
 
-        def add_column(table_name, column_name, type, options = {})
+        def table_exists?(table_name)
+          @connection.table_names.include?(table_name)
+        end
+
+        def add_column(table_name, column_name, type, **options)
           super
 
           create_sequence(options[:sequence] || default_sequence_name(table_name)) if type == :primary_key && options[:sequence] != false
@@ -145,29 +120,24 @@ module ActiveRecord
           END_SQL
         end
 
-        def remove_column(table_name, column_name, type = nil, options = {})
+        def remove_column(table_name, column_name, type = nil, **options)
           indexes(table_name).each do |i|
             remove_index! i.table, i.name if i.columns.any? { |c| c == column_name.to_s }
           end
 
-          column_exist = !execute(squish_sql(<<-END_SQL))
-          select 1 from RDB$RELATION_FIELDS rf
-            where lower(rf.RDB$RELATION_NAME) = '#{table_name.downcase}' and lower(rf.RDB$FIELD_NAME) = '#{column_name.downcase}'
-          END_SQL
-                         .empty?
-          super if column_exist
+          super
         end
 
         def remove_column_for_alter(_table_name, column_name, _type = nil, _options = {})
           "DROP #{quote_column_name(column_name)}"
         end
 
-        def change_column(table_name, column_name, type, options = {})
+        def change_column(table_name, column_name, type, **options)
           type_sql = type_to_sql(type, *options.values_at(:limit, :precision, :scale))
 
           if %i[text string].include?(type)
             copy_column = "c_temp"
-            add_column table_name, copy_column, type, options
+            add_column table_name, copy_column, type, **options
             execute(squish_sql(<<-END_SQL))
             UPDATE #{table_name} SET #{quote_column_name(copy_column)} = #{quote_column_name(column_name)};
             END_SQL
@@ -184,17 +154,30 @@ module ActiveRecord
         end
 
         def change_column_default(table_name, column_name, default)
+          column = column_for(table_name, column_name)
+
+          # Column doesn't have a default value
+          # Nothing to alter or drop
+          return if default.nil? && column.default.nil?
+
+          default_stmn =
+            if default.nil? # Remove default column value
+              "DROP DEFAULT"
+            else
+              "SET DEFAULT #{quote(default)}"
+            end
+
           execute(squish_sql(<<-END_SQL))
             ALTER TABLE #{quote_table_name(table_name)}
             ALTER #{quote_column_name(column_name)}
-            SET DEFAULT #{quote(default)}
+            #{default_stmn}
           END_SQL
         end
 
         def change_column_null(table_name, column_name, null, default = nil)
           change_column_default(table_name, column_name, default) if default
 
-          db_column = columns(table_name).find { |c| c.name == column_name.to_s }
+          db_column = column_for(table_name, column_name)
           options = { null: null }
           options[:default] = db_column.default if !default && db_column.default
           options[:default] = default if default
@@ -202,7 +185,7 @@ module ActiveRecord
           type = type_to_sql(ar_type.type, ar_type.limit, ar_type.precision, ar_type.scale)
 
           copy_column = "c_temp"
-          add_column table_name, copy_column, type, options
+          add_column table_name, copy_column, type, **options
           execute(squish_sql(<<-END_SQL))
             UPDATE #{table_name} SET #{quote_column_name(copy_column)} = #{quote_column_name(column_name)};
           END_SQL
@@ -232,7 +215,7 @@ module ActiveRecord
         def index_name(table_name, options) # :nodoc:
           if Hash === options
             if options[:column]
-              index_name = "index_#{table_name}_on_#{Array(options[:column]) * '_and_'}"
+              index_name = "#{table_name}_on_#{Array(options[:column]) * '_'}"
               if index_name.length > table_alias_length
                 "IDX_#{Digest::SHA256.hexdigest(index_name)[0..22]}"
               else
@@ -272,6 +255,8 @@ module ActiveRecord
           case type
           when :integer
             integer_to_sql(limit)
+          when :bigint
+            'bigint'
           when :float
             float_to_sql(limit)
           when :text
@@ -465,21 +450,6 @@ module ActiveRecord
           def squish_sql(sql)
             sql.strip.gsub(/\s+/, " ")
           end
-
-          class << self
-            def after(*names)
-              names.flatten.each do |name|
-                m = ActiveRecord::ConnectionAdapters::Rdb::SchemaStatements.instance_method(name)
-                define_method(name) do |*args, &block|
-                  m.bind_call(self, *args, &block)
-                  yield
-                  commit_db_transaction
-                end
-              end
-            end
-          end
-
-          after(methods_to_commit) { |_| }
 
           def insert_versions_sql(versions)
             sm_table = quote_table_name(schema_migration.table_name)
