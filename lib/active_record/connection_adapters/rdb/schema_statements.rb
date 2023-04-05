@@ -120,7 +120,7 @@ module ActiveRecord
           END_SQL
         end
 
-        def remove_column(table_name, column_name, type = nil, options = {})
+        def remove_column(table_name, column_name, type = nil, **options)
           indexes(table_name).each do |i|
             remove_index! i.table, i.name if i.columns.any? { |c| c == column_name.to_s }
           end
@@ -132,12 +132,12 @@ module ActiveRecord
           "DROP #{quote_column_name(column_name)}"
         end
 
-        def change_column(table_name, column_name, type, options = {})
+        def change_column(table_name, column_name, type, **options)
           type_sql = type_to_sql(type, *options.values_at(:limit, :precision, :scale))
 
           if %i[text string].include?(type)
             copy_column = "c_temp"
-            add_column table_name, copy_column, type, options
+            add_column table_name, copy_column, type, **options
             execute(squish_sql(<<-END_SQL))
             UPDATE #{table_name} SET #{quote_column_name(copy_column)} = #{quote_column_name(column_name)};
             END_SQL
@@ -185,7 +185,7 @@ module ActiveRecord
           type = type_to_sql(ar_type.type, ar_type.limit, ar_type.precision, ar_type.scale)
 
           copy_column = "c_temp"
-          add_column table_name, copy_column, type, options
+          add_column table_name, copy_column, type, **options
           execute(squish_sql(<<-END_SQL))
             UPDATE #{table_name} SET #{quote_column_name(copy_column)} = #{quote_column_name(column_name)};
           END_SQL
