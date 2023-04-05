@@ -7,8 +7,17 @@ module ActiveRecord
         QUOTED_FALSE = "false"
         QUOTED_TRUE = "true"
 
-        QUOTED_POSITION = '"POSITION"'
-        QUOTED_VALUE = '"VALUE"'
+
+        def quote_table_name(name)
+          self.class.quoted_table_names[name] ||= super.upcase.gsub(".", "\".\"").freeze
+        end
+
+        # Upcase in this case is required.
+        # It explicitly escapes any potential reserved word in the column name.
+        # Maybe it should be moved to fb-ext as it supports downcase_names (sadly not wiceverse)
+        def quote_column_name(name)
+          self.class.quoted_column_names[name] ||= %Q("#{super.upcase.gsub('"', '""')}")
+        end
 
         def quote_string(string) # :nodoc:
           string.gsub(/'/, "''")
@@ -20,16 +29,6 @@ module ActiveRecord
           else
             time.strftime("%d.%m.%Y")
           end
-        end
-
-        def quote_column_name(column_name) # :nodoc:
-          column = column_name.dup.to_s
-          column.gsub!(/(?<=[^"\w]|^)position(?=[^"\w]|$)/i, QUOTED_POSITION)
-          column.gsub!(/(?<=[^"\w]|^)value(?=[^"\w]|$)/i, QUOTED_VALUE)
-          column.gsub!(/(?<=[^"\w]|^)as count(?=[^"\w]|$)/i, 'AS "COUNT"')
-          column.delete!('"')
-          column.upcase!
-          %("#{column}")
         end
 
         def quote_table_name_for_assignment(_table, attr)

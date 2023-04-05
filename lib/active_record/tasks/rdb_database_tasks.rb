@@ -33,23 +33,24 @@ module ActiveRecord
       ensure
         create
       end
-      # ================================================================
-      # TODO: probably not working
+
       def structure_dump(filename, structure_dump_flags = nil)
+        if File.exists? filename
+          FileUtils.rm filename
+        end
+
         isql :extract, output: filename
       end
 
       def structure_load(filename, structure_load_flags = nil)
         isql input: filename
       end
-      # ================================================================
 
       private
         def rdb_database
           ::Fb::Database.new(db_config)
         end
 
-        # TODO: probably not working
         # Executes isql commands to load/dump the schema.
         # The generated command might look like this:
         #   isql db/development.fdb -user SYSDBA -password masterkey -extract
@@ -65,7 +66,6 @@ module ActiveRecord
           raise "Error running: #{cmd}" unless Kernel.system(cmd)
         end
 
-        # TODO: probably not working
         def isql_create(*_args)
           "#{isql_executable} -input "
         end
