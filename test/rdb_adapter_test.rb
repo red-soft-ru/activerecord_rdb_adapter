@@ -80,4 +80,13 @@ class RdbAdapterTest < ActiveRecord::TestCase
 
     assert_equal "0.0.0.0/3050:/db/test.fdb", con_config[:database]
   end
+
+  def test_add_column_with_string_limit
+    @connection.add_column :foos, :ip, :string, limit: "10"
+
+    column = @connection.columns(:foos).detect { |c| c.name == "ip" }
+
+    assert_not_nil column
+    assert_equal column.limit, 10
+  end
 end

@@ -252,6 +252,11 @@ module ActiveRecord
             precision = args[:precision] if precision.nil?
             scale = args[:scale] if scale.nil?
           end
+          # Limit might be a string:
+          #   t.column :ip, :string, :limit => '24'
+          # Set it to nil if the string is not an appropriate integer
+          limit = limit.to_i
+          limit = nil if limit.zero?
           case type
           when :integer
             integer_to_sql(limit)
